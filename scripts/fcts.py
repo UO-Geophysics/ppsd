@@ -18,7 +18,10 @@ from obspy.core.inventory import Inventory
 from obspy.core.util import AttribDict
 from obspy.signal.invsim import cosine_taper
 
-#### FCTS pour main ####
+"""
+  Functions needed for the spectral estimation code. 
+  
+"""
 
 def setup_period_binning(psd_periods,period_smoothing_width_octaves,
                           period_step_octaves, period_limits):
@@ -192,7 +195,6 @@ def check_time_present(times_processed, ppsd_length, overlap, utcdatetime):
             return True
     raise NotImplementedError('This should not happen, please report on '
                               'github.')
-
 
 def process(leng,nfft,sampling_rate,nlap,psd_periods,
             period_bin_left_edges,period_bin_right_edges,trace,
