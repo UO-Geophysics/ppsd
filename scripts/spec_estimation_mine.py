@@ -297,7 +297,6 @@ current_hist_stack = hist_stack
 # current_hist_stack_cumulative = hist_stack_cumul
 current_times_used = used_times
 
-
 """
     Plot of the 2D-histogram with all the parameters. Without modification,
     no limit of frequencies, no noise models, no coverage, colors of PSD
