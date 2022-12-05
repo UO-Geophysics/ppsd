@@ -73,15 +73,15 @@ filename = (path + sta + '/' + sta + net + yr + day)
 
 segm = 3600 #1h cut
 
-# 1 day
+# 1 day 
 stream = read(filename)
 trace  = stream[2] #Composante Z
 
-# # Cut of the data on choosen times
-# starttime = UTCDateTime("2011-07-03T02:30:00.000")
-# endtime   = starttime+seg
-# stream = read(filename)
-# trace  = stream[2] #Composante Z
+# Cut of the data on choosen times
+starttime = UTCDateTime("2011-07-03T02:30:00.000")
+endtime   = starttime+segm
+stream = read(filename,starttime=starttime,endtime=endtime)
+trace  = stream[2] #Composante Z
 
 stats         = trace.stats
 network       = trace.stats.network
