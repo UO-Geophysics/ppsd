@@ -42,6 +42,8 @@ PSS : the original script of the PPSD class of the module can be found at
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
+# import datetime
+# from datetime import date as date_n
 
 from matplotlib import mlab
 from matplotlib.colors import LinearSegmentedColormap
@@ -64,6 +66,7 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
     necessary infos from it and also get the metadata of the station response.
     
 """
+
 # Number of days (starting on the 1st of Jan)
 n = int(5)
 
@@ -76,18 +79,18 @@ for iday in np.arange(1,n,dtype=int):
 
     # Nom du fichier
     sta = 'B017'
-    net = '.PB'
-    yr  = '.2011'
+    net = 'PB'
+    yr  = '2011'
     
     if len(str(iday)) == 1:
-        day = ('.00' + str(iday))
+        day = ('00' + str(iday))
     elif len(str(iday)) == 2:
-        day = ('.0' + str(iday))
+        day = ('0' + str(iday))
     elif len(str(iday)) == 3:
-        day = ('.' + str(iday))
+        day = (str(iday))
     
     path = "/Users/loispapin/Documents/Work/PNSN/2011/Data/"
-    filename = (path + sta + '/' + sta + net + yr + day)
+    filename = (path + sta + '/' + sta + '.' + net + '.' + yr + '.' + day)
     
     segm = 3600 #1h cut
     
@@ -279,8 +282,8 @@ if not times_processed:
 
 # determine which psd pieces should be used in the stack,
 # based on all selection criteria specified by user
-selected = stack_selection(current_times_all_details,times_processed,
-                           starttime,endtime)
+selected = stack_selection(current_times_all_details, times_processed,
+                           starttime=starttime, endtime=endtime)
 used_indices = selected.nonzero()[0]
 used_count   = len(used_indices)
 used_times   = np.array(times_processed)[used_indices]
@@ -457,6 +460,7 @@ if max_percentage is not None: #OK
 if xaxis_frequency: #OK
     ax.set_xlabel('Frequency [Hz]')
     ax.invert_xaxis()
+else:
     ax.set_xlabel('Period [s]')
 ax.set_xscale('log')
 ax.set_xlim(period_lim)
