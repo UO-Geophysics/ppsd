@@ -159,14 +159,13 @@ current_hist_stack_cumulative = None
 current_times_used            = [] 
 current_times_all_details     = []
 
-
 """
     Process the data and create the first PSD data. Equivalent of the 
     def add in the PPSD class.
     
 """
 
-# Init
+# Initialisation of the parameters
 verbose     = False #Show the time data computed
 skip_on_gaps= False
 
@@ -225,7 +224,6 @@ for trace in stream:
                               period_bin_left_edges,period_bin_right_edges,
                               times_processed,binned_psds,
                               metadata,iid,trace=slice)
-
             if success:
                 if verbose:
                     print(t1)
@@ -238,7 +236,6 @@ if changed:
     current_hist_stack_cumulative = None
     current_times_used            = [] 
     current_times_all_details     = []
-
 
 """
     Calculation of the 2D-histogram based on the processed data (time).
@@ -314,7 +311,7 @@ if current_hist_stack is None:
     msg = 'No data accumulated'
     raise Exception(msg)
 
-# Init
+# Initialisation of the parameters
 filename=None
 
 special_handling = None
