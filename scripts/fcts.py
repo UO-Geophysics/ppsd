@@ -4,6 +4,9 @@
 Created on Mon Nov  7 10:56:05 2022
 
 @author: loispapin
+
+All the functions used in the scripts of spectral estimation (PPSD)
+are here. This is made to avoid a bigger script.
 """
 
 import bisect
@@ -11,15 +14,14 @@ import math
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
+
 from matplotlib import mlab
+
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
 from obspy.core.inventory import Inventory
 from obspy.core.util import AttribDict
 from obspy.signal.invsim import cosine_taper
-
-#### FCTS pour main ####
-#test for a change
 
 def setup_period_binning(psd_periods,period_smoothing_width_octaves,
                           period_step_octaves, period_limits):
