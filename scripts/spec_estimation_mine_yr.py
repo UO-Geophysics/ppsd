@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Nov  7 10:03:38 2022
-Working on Mon Nov 28 15:18:23 2022
+Created on Thu Dec  1 10:23:16 2022
+Working on Mon Dec  2 17:05:48 2022
 
 @author: loispapin
 
@@ -12,8 +12,11 @@ using the ppsd.plot of the module.
 
 No class is defined here, only necessary functions are in defs.py file.
 
-Code for 1 day of data or a section of it. Need to check 
-spectral_estimation_mine_yr.py for a year of data.
+Code for 1 year of data or any length of time including several days. Need to 
+check spectral_estimation_mine.py for a day of data only.
+
+Calculations start on Jan 1 for now : need to update the code so we can choose
+any day we want during the year. (maj 05/12)
 
 Sections :
     . Collect of the data 
@@ -61,184 +64,207 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
     necessary infos from it and also get the metadata of the station response.
     
 """
+# Number of days (starting on the 1st of Jan)
+n = int(5)
 
-# Nom du fichier
-sta = 'B017'
-net = '.PB'
-yr  = '.2011'
-day = '.184'
+# Temporary variables
+temp_time=[]
+temp_binned_psds=[None]*(n-1) #Allocate space for data
+starts=[];ends=[] #Every start and end of times
 
-path = "/Users/loispapin/Documents/Work/PNSN/2011/Data/"
-filename = (path + sta + '/' + sta + net + yr + day)
+for iday in np.arange(1,n,dtype=int):
 
-segm = 3600 #1h cut
-
-# 1 day
-stream = read(filename)
-trace  = stream[2] #Composante Z
-
-# # Cut of the data on choosen times
-# starttime = UTCDateTime("2011-07-03T02:30:00.000")
-# endtime   = starttime+seg
-# stream = read(filename)
-# trace  = stream[2] #Composante Z
-
-stats         = trace.stats
-network       = trace.stats.network
-station       = trace.stats.station
-channel       = trace.stats.channel
-starttime     = trace.stats.starttime
-endtime       = trace.stats.endtime
-sampling_rate = trace.stats.sampling_rate
-
-iid = "%(network)s.%(station)s.%(location)s.%(channel)s" % stats
-
-metadata = client.get_stations(network=network,station=station,
-                               starttime=starttime,endtime=endtime,level='response')
-
-"""
-    Define the PPSD informations such as the segments for the calculations,
-    the frenquencies and periods, the bins for the histogram. Equivalent of
-    the def __init__ in the PPSD class.
+    # Nom du fichier
+    sta = 'B017'
+    net = '.PB'
+    yr  = '.2011'
     
-"""
-
-ppsd_length                    = segm 
-overlap                        = 0.5
-period_smoothing_width_octaves = 1.0
-period_step_octaves            = 0.125
-db_bins                        = (-200, -50, 1.)
-
-##13 segments overlapping 75% and truncate to next lower power of 2
-#number of points
-nfft=ppsd_length*sampling_rate 
-#1 full segment length + 25% * 12 full segment lengths
-nfft=nfft/4.0                  
-#next smaller power of 2 for nfft
-nfft=prev_pow_2(nfft)          
-#use 75% overlap
-nlap=int(0.75*nfft)            
-#trace length for one psd segment
-leng=int(sampling_rate*ppsd_length)
-#make an initial dummy psd and to get the array of periods
-_,freq=mlab.psd(np.ones(leng),nfft,sampling_rate,noverlap=nlap) 
-#leave out first adn last entry (offset)
-freq=freq[1:]
-psd_periods=1.0/freq[::-1]
-
-# To be modified to select the wanted frequencies
-# period_limits = (psd_periods[0],
-#                  psd_periods[-1])
-# Calculation on 0.01-16Hz
-f1 = 1; f2 = 12; 
-period_limits = (1/f2,1/f1)
-
-period_binning=setup_period_binning(psd_periods,
-                                    period_smoothing_width_octaves,
-                                    period_step_octaves,period_limits)
-
-period_xedges = np.concatenate([period_binning[1,0:1],
-                                period_binning[3,:]])
-
-period_bin_left_edges  = period_binning[0,:]
-period_bin_centers     = period_binning[2,:]
-period_bin_right_edges = period_binning[4,:]
-
-#set up the binning for the db scale
-num_bins = int((db_bins[1]-db_bins[0])/db_bins[2])
-db_bin_edges   = np.linspace(db_bins[0],db_bins[1],num_bins+1,endpoint=True)
-db_bin_centers = (db_bin_edges[:-1]+db_bin_edges[1:])/ 2.0
-
-# Init
-times_processed = []
-times_data      = []
-times_gaps      = []
-binned_psds     = []
-current_hist_stack            = None
-current_hist_stack_cumulative = None
-current_times_used            = [] 
-current_times_all_details     = []
-
-
-"""
-    Process the data and create the first PSD data. Equivalent of the 
-    def add in the PPSD class.
+    if len(str(iday)) == 1:
+        day = ('.00' + str(iday))
+    elif len(str(iday)) == 2:
+        day = ('.0' + str(iday))
+    elif len(str(iday)) == 3:
+        day = ('.' + str(iday))
     
-"""
-
-# Init
-verbose     = False #Show the time data computed
-skip_on_gaps= False
-
-# Verifications before the computations
-if metadata is None:
-    msg = ("PPSD instance has no metadata attached, which are needed "
-           "for processing the data. When using 'PPSD.load_npz()' use "
-           "'metadata' kwarg to provide metadata.")
-    raise Exception(msg)
-changed = False
-if isinstance(stream, Trace):
-    stream = Stream([stream])
-if not stream:
-    msg = 'Empty stream object provided to PPSD.add()'
-    warnings.warn(msg)
-stream = stream.select(id=iid)
-if not stream:
-    msg = 'No traces with matching SEED ID in provided stream object.'
-    warnings.warn(msg)
-stream = stream.select(sampling_rate=sampling_rate)
-if not stream:
-    msg = ('No traces with matching sampling rate in provided stream '
-           'object.')
-    warnings.warn(msg)
-
-# save information on available data and gaps
-times_data = insert_data_times(times_data,stream)
-times_gaps = insert_gap_times (times_gaps,stream)
-# merge depending on skip_on_gaps
-stream.merge(merge_method(skip_on_gaps),fill_value=0)
-
-# Read the all stream by the defined segments
-for trace in stream:
-    if not sanity_check(trace,iid,sampling_rate):
-        msg = "Skipping incompatible trace."
-        warnings.warn(msg)
-        continue
-    t1 = trace.stats.starttime
-    t2 = trace.stats.endtime
-    if t1 + ppsd_length - trace.stats.delta > t2:
-        msg = (f"Trace is shorter than this PPSD's 'ppsd_length' "
-               f"({str(ppsd_length)} seconds). Skipping trace: "
-               f"{str(trace)}")
-        warnings.warn(msg)
-        continue
-    while t1 + ppsd_length - trace.stats.delta <= t2:
-        if check_time_present(times_processed,ppsd_length,overlap,t1):
-            msg = "Already covered time spans detected (e.g. %s), " + \
-                  "skipping these slices."
-            msg = msg % t1
-            warnings.warn(msg)
-        else:
-            slice = trace.slice(t1, t1 + ppsd_length -
-                                trace.stats.delta)
-            success = process(leng,nfft,sampling_rate,nlap,psd_periods,
-                              period_bin_left_edges,period_bin_right_edges,
-                              times_processed,binned_psds,
-                              metadata,iid,trace=slice)
-
-            if success:
-                if verbose:
-                    print(t1)
-                changed = True
-        t1 += (1 - overlap) * ppsd_length  # advance
-
-# Init
-if changed:
+    path = "/Users/loispapin/Documents/Work/PNSN/2011/Data/"
+    filename = (path + sta + '/' + sta + net + yr + day)
+    
+    segm = 3600 #1h cut
+    
+    # 1 day
+    stream = read(filename)
+    trace  = stream[2] #Composante Z
+    
+    # # Cut of the data on choosen times
+    # starttime = UTCDateTime("2011-07-03T02:30:00.000")
+    # endtime   = starttime+seg
+    # stream = read(filename)
+    # trace  = stream[2] #Composante Z
+    
+    stats         = trace.stats
+    network       = trace.stats.network
+    station       = trace.stats.station
+    channel       = trace.stats.channel
+    starttime     = trace.stats.starttime
+    endtime       = trace.stats.endtime
+    sampling_rate = trace.stats.sampling_rate
+    
+    iid = "%(network)s.%(station)s.%(location)s.%(channel)s" % stats
+    
+    metadata = client.get_stations(network=network,station=station,
+                                   starttime=starttime,endtime=endtime,level='response')
+    
+    starts = np.append(starts,starttime)
+    ends   = np.append(ends,endtime)
+    
+    """
+        Define the PPSD informations such as the segments for the calculations,
+        the frenquencies and periods, the bins for the histogram. Equivalent of
+        the def __init__ in the PPSD class.
+        
+    """
+    
+    ppsd_length                    = segm 
+    overlap                        = 0.5
+    period_smoothing_width_octaves = 1.0
+    period_step_octaves            = 0.125
+    db_bins                        = (-200, -50, 1.)
+    
+    ##13 segments overlapping 75% and truncate to next lower power of 2
+    #number of points
+    nfft=ppsd_length*sampling_rate 
+    #1 full segment length + 25% * 12 full segment lengths
+    nfft=nfft/4.0                  
+    #next smaller power of 2 for nfft
+    nfft=prev_pow_2(nfft)          
+    #use 75% overlap
+    nlap=int(0.75*nfft)            
+    #trace length for one psd segment
+    leng=int(sampling_rate*ppsd_length)
+    #make an initial dummy psd and to get the array of periods
+    _,freq=mlab.psd(np.ones(leng),nfft,sampling_rate,noverlap=nlap) 
+    #leave out first adn last entry (offset)
+    freq=freq[1:]
+    psd_periods=1.0/freq[::-1]
+    
+    # To be modified to select the wanted frequencies
+    # period_limits = (psd_periods[0],
+    #                  psd_periods[-1])
+    # Calculation on 0.01-16Hz
+    f1 = 0.01; f2 = 16; 
+    period_limits = (1/f2,1/f1)
+    
+    period_binning=setup_period_binning(psd_periods,
+                                        period_smoothing_width_octaves,
+                                        period_step_octaves,period_limits)
+    
+    period_xedges = np.concatenate([period_binning[1,0:1],
+                                    period_binning[3,:]])
+    
+    period_bin_left_edges  = period_binning[0,:]
+    period_bin_centers     = period_binning[2,:]
+    period_bin_right_edges = period_binning[4,:]
+    
+    #set up the binning for the db scale
+    num_bins = int((db_bins[1]-db_bins[0])/db_bins[2])
+    db_bin_edges   = np.linspace(db_bins[0],db_bins[1],num_bins+1,endpoint=True)
+    db_bin_centers = (db_bin_edges[:-1]+db_bin_edges[1:])/ 2.0
+    
+    # Init
+    times_processed = []
+    times_data      = []
+    times_gaps      = []
+    binned_psds     = []
     current_hist_stack            = None
     current_hist_stack_cumulative = None
     current_times_used            = [] 
     current_times_all_details     = []
+    
+    """
+        Process the data and create the first PSD data. Equivalent of the 
+        def add in the PPSD class.
+        
+    """
+    
+    # Init
+    verbose     = False #Show the time data computed
+    skip_on_gaps= False
+    
+    # Verifications before the computations
+    if metadata is None:
+        msg = ("PPSD instance has no metadata attached, which are needed "
+               "for processing the data. When using 'PPSD.load_npz()' use "
+               "'metadata' kwarg to provide metadata.")
+        raise Exception(msg)
+    changed = False
+    if isinstance(stream, Trace):
+        stream = Stream([stream])
+    if not stream:
+        msg = 'Empty stream object provided to PPSD.add()'
+        warnings.warn(msg)
+    stream = stream.select(id=iid)
+    if not stream:
+        msg = 'No traces with matching SEED ID in provided stream object.'
+        warnings.warn(msg)
+    stream = stream.select(sampling_rate=sampling_rate)
+    if not stream:
+        msg = ('No traces with matching sampling rate in provided stream '
+               'object.')
+        warnings.warn(msg)
+    
+    # save information on available data and gaps
+    times_data = insert_data_times(times_data,stream)
+    times_gaps = insert_gap_times (times_gaps,stream)
+    # merge depending on skip_on_gaps
+    stream.merge(merge_method(skip_on_gaps),fill_value=0)
+    
+    # Read the all stream by the defined segments
+    for trace in stream:
+        if not sanity_check(trace,iid,sampling_rate):
+            msg = "Skipping incompatible trace."
+            warnings.warn(msg)
+            continue
+        t1 = trace.stats.starttime
+        t2 = trace.stats.endtime
+        if t1 + ppsd_length - trace.stats.delta > t2:
+            msg = (f"Trace is shorter than this PPSD's 'ppsd_length' "
+                   f"({str(ppsd_length)} seconds). Skipping trace: "
+                   f"{str(trace)}")
+            warnings.warn(msg)
+            continue
+        while t1 + ppsd_length - trace.stats.delta <= t2:
+            if check_time_present(times_processed,ppsd_length,overlap,t1):
+                msg = "Already covered time spans detected (e.g. %s), " + \
+                      "skipping these slices."
+                msg = msg % t1
+                warnings.warn(msg)
+            else:
+                slice = trace.slice(t1, t1 + ppsd_length -
+                                    trace.stats.delta)
+                success = process(leng,nfft,sampling_rate,nlap,psd_periods,
+                                  period_bin_left_edges,period_bin_right_edges,
+                                  times_processed,binned_psds,
+                                  metadata,iid,trace=slice)
+                if success:
+                    if verbose:
+                        print(t1)
+                    changed = True
+            t1 += (1 - overlap) * ppsd_length  # advance
+            temp_binned_psds[iday-1] = binned_psds
+            
+    temp_time=np.append(temp_time,times_processed)
+    
+    # Init
+    if changed:
+        current_hist_stack            = None
+        current_hist_stack_cumulative = None
+        current_times_used            = [] 
+        current_times_all_details     = []
 
+# All days are include in the variables for the histogram
+times_processed=temp_time.tolist()
+binned_psds = [item for sublist in temp_binned_psds for item in sublist]
+starttime=starts[0];endtime=ends[-1] #Start and end of the period
 
 """
     Calculation of the 2D-histogram based on the processed data (time).
@@ -254,7 +280,7 @@ if not times_processed:
 # determine which psd pieces should be used in the stack,
 # based on all selection criteria specified by user
 selected = stack_selection(current_times_all_details,times_processed,
-                           starttime=starttime, endtime=endtime)
+                           starttime,endtime)
 used_indices = selected.nonzero()[0]
 used_count   = len(used_indices)
 used_times   = np.array(times_processed)[used_indices]
@@ -297,7 +323,6 @@ current_hist_stack = hist_stack
 # current_hist_stack_cumulative = hist_stack_cumul
 current_times_used = used_times
 
-
 """
     Plot of the 2D-histogram with all the parameters. Without modification,
     no limit of frequencies, no noise models, no coverage, colors of PSD
@@ -336,7 +361,7 @@ elif color==2:
     cmap = pqlx #McNamara color map (9)white background, rainbow color)
 else: 
     msg = "Error on the choosen number for the colormap"
-    warnings.warn(msg)
+    raise Exception(msg)
     cmap = obspy_sequential
 
 cumulative=False
@@ -443,10 +468,10 @@ ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
 title = "%s   %s -- %s  (%i/%i segments)"
 title = title % (iid,
-                 UTCDateTime(ns=times_processed[0]).date,
-                 UTCDateTime(ns=times_processed[-1]).date,
-                 len(current_times_used),
-                 len(times_processed))
+                  UTCDateTime(ns=int(times_processed[0])).date,
+                  UTCDateTime(ns=int(times_processed[-1])).date,
+                  len(current_times_used),
+                  len(times_processed))
 ax.set_title(title)
 
 # Catch underflow warnings due to plotting on log-scale.

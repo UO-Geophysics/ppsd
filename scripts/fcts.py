@@ -18,10 +18,7 @@ from obspy.core.inventory import Inventory
 from obspy.core.util import AttribDict
 from obspy.signal.invsim import cosine_taper
 
-"""
-  Functions needed for the spectral estimation code. 
-  
-"""
+#### FCTS pour main ####
 
 def setup_period_binning(psd_periods,period_smoothing_width_octaves,
                           period_step_octaves, period_limits):
@@ -197,8 +194,8 @@ def check_time_present(times_processed, ppsd_length, overlap, utcdatetime):
                               'github.')
 
 def process(leng,nfft,sampling_rate,nlap,psd_periods,
-            period_bin_left_edges,period_bin_right_edges,trace,
-            times_processed,binned_psds,metadata,iid):
+            period_bin_left_edges,period_bin_right_edges,
+            times_processed,binned_psds,metadata,iid,trace):
     """
     Processes a segment of data and save the psd information.
     Whether `Trace` is compatible (station, channel, ...) has to
@@ -246,7 +243,7 @@ def process(leng,nfft,sampling_rate,nlap,psd_periods,
 
     # working with the periods not frequencies later so reverse spectrum
     spec = spec[::-1]
-
+    
     try:
         resp = get_response(metadata,iid,nfft,trace)
     except Exception as e:
@@ -288,7 +285,8 @@ def process(leng,nfft,sampling_rate,nlap,psd_periods,
                      (psd_periods <= per_right)]
         smoothed_psd.append(specs.mean())
     smoothed_psd = np.array(smoothed_psd, dtype=np.float32)
-    insert_processed_data(times_processed,binned_psds,trace.stats.starttime,smoothed_psd)
+    insert_processed_data(times_processed,binned_psds,
+                          trace.stats.starttime,smoothed_psd)
     return True
 
 def fft_taper(data):
@@ -326,8 +324,7 @@ def insert_processed_data(times_processed,binned_psds,utcdatetime,spectrum):
     binned_psds.insert(ind, spectrum)
 
 def stack_selection(current_times_all_details,times_processed, starttime=None, 
-                    endtime=None, time_of_weekday=None, year=None, month=None,
-                    isoweek=None, callback=None):
+                    endtime=None):
     """
     For details on restrictions see :meth:`calculate_histogram`.
 
@@ -341,53 +338,6 @@ def stack_selection(current_times_all_details,times_processed, starttime=None,
         selected &= times_all >= starttime._ns
     if endtime is not None:
         selected &= times_all <= endtime._ns
-    if time_of_weekday is not None: #NOPE
-        times_all_details = get_times_all_details(current_times_all_details,times_processed)
-        # we need to do a logical OR over all different user specified time
-        # windows, so we start with an array of False and set all matching
-        # pieces True for the final logical AND against the previous
-        # restrictions
-        selected_time_of_weekday = np.zeros(len(times_all), dtype=bool)
-        for weekday, start, end in time_of_weekday:
-            if weekday == -1:
-                selected_ = np.ones(len(times_all), dtype=bool)
-            else:
-                selected_ = (
-                    times_all_details['iso_weekday'] == weekday)
-            selected_ &= times_all_details['time_of_day'] >= start
-            selected_ &= times_all_details['time_of_day'] <= end
-            selected_time_of_weekday |= selected_
-        selected &= selected_time_of_weekday
-    if year is not None: #NOPE
-        try:
-            year[0]
-        except TypeError:
-            year = [year]
-        times_all_details = get_times_all_details(current_times_all_details,times_processed)
-        selected_ = times_all_details['year'] == year[0]
-        for year_ in year[1:]:
-            selected_ |= times_all_details['year'] == year_
-        selected &= selected_
-    if month is not None: #NOPE
-        try:
-            month[0]
-        except TypeError:
-            month = [month]
-        times_all_details = get_times_all_details(current_times_all_details,times_processed)
-        selected_ = times_all_details['year'] == year[0]
-        selected_ = times_all_details['month'] == month[0]
-        for month_ in month[1:]:
-            selected_ |= times_all_details['month'] == month_
-        selected &= selected_
-    if isoweek is not None: #NOPE
-        times_all_details = get_times_all_details(current_times_all_details,times_processed)
-        selected_ = times_all_details['year'] == year[0]
-        selected_ = times_all_details['iso_week'] == isoweek[0]
-        for isoweek_ in isoweek[1:]:
-            selected_ |= times_all_details['iso_week'] == isoweek_
-        selected &= selected_
-    if callback is not None: #NOPE
-        selected &= callback(times_all)
     return selected
 
 def get_times_all_details(current_times_all_details,times_processed):
@@ -467,7 +417,7 @@ def plot_histogram(fig, current_hist_stack, current_times_used,
     if fig.grid:
         if fig.cmap.name == "viridis": #OK
             color = {"color": "0.7"}
-        else:
+        else: #NOPE
             color = {}
         ax.grid(True, which="major", **color)
         ax.grid(True, which="minor", **color)
