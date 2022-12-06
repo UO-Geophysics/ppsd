@@ -42,9 +42,7 @@ import matplotlib.pyplot as plt
 # from datetime import date as date_n
 
 from matplotlib import mlab
-from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.ticker import FormatStrFormatter
-from matplotlib.patheffects import withStroke
 
 from obspy import read
 from obspy import Stream, Trace, UTCDateTime
@@ -63,9 +61,9 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
     
 """
 
-# Number of days and start
-num = int(5)
+# Start of the data and how long
 day = 1 #1er janvier
+num = 5
 
 # Temporary variables
 temp_time=[]
@@ -154,9 +152,9 @@ for iday in np.arange(day,day+num,dtype=int):
     f1 = 0.01; f2 = 16; 
     period_limits = (1/f2,1/f1)
     
-    period_binning=setup_period_binning(psd_periods,
-                                        period_smoothing_width_octaves,
-                                        period_step_octaves,period_limits)
+    period_binning = setup_period_binning(psd_periods,
+                                          period_smoothing_width_octaves,
+                                          period_step_octaves,period_limits)
     
     period_xedges = np.concatenate([period_binning[1,0:1],
                                     period_binning[3,:]])
@@ -168,7 +166,7 @@ for iday in np.arange(day,day+num,dtype=int):
     #set up the binning for the db scale
     num_bins = int((db_bins[1]-db_bins[0])/db_bins[2])
     db_bin_edges   = np.linspace(db_bins[0],db_bins[1],num_bins+1,endpoint=True)
-    db_bin_centers = (db_bin_edges[:-1]+db_bin_edges[1:])/ 2.0
+    db_bin_centers = (db_bin_edges[:-1]+db_bin_edges[1:])/2.0
     
     # Init
     times_processed = []
@@ -293,13 +291,12 @@ num_period_bins = len(period_bin_centers)
 num_db_bins = len(db_bin_centers)
 
 # initial setup of 2D histogram
-hist_stack = np.zeros((num_period_bins, num_db_bins), dtype=np.uint64)
+hist_stack = np.zeros((num_period_bins,num_db_bins),dtype=np.uint64)
 
 # empty selection, set all histogram stacks to zeros
 if not used_count:
     current_hist_stack = hist_stack
-    current_hist_stack_cumulative = np.zeros_like(hist_stack, 
-                                                  dtype=np.float32)
+    current_hist_stack_cumulative = np.zeros_like(hist_stack,dtype=np.float32)
     current_times_used = used_times
 
 # concatenate all used spectra, evaluate index of amplitude bin each
