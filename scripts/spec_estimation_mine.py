@@ -71,6 +71,10 @@ sta = 'B017'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
 day = str(date.timetuple().tm_yday)
+if len(day) == 1:
+    day = ('00' + day)
+elif len(day) == 2:
+    day = ('0' + day)
 
 path = "/Users/loispapin/Documents/Work/PNSN/2011/Data/"
 filename = (path + sta + '/' + sta + '.' + net + '.' + yr + '.' + day)
@@ -137,9 +141,9 @@ psd_periods=1.0/freq[::-1]
 f1 = 1; f2 = 12; 
 period_limits = (1/f2,1/f1)
 
-period_binning=setup_period_binning(psd_periods,
-                                    period_smoothing_width_octaves,
-                                    period_step_octaves,period_limits)
+period_binning = setup_period_binning(psd_periods,
+                                      period_smoothing_width_octaves,
+                                      period_step_octaves,period_limits)
 
 period_xedges = np.concatenate([period_binning[1,0:1],
                                 period_binning[3,:]])
@@ -151,7 +155,7 @@ period_bin_right_edges = period_binning[4,:]
 #set up the binning for the db scale
 num_bins = int((db_bins[1]-db_bins[0])/db_bins[2])
 db_bin_edges   = np.linspace(db_bins[0],db_bins[1],num_bins+1,endpoint=True)
-db_bin_centers = (db_bin_edges[:-1]+db_bin_edges[1:])/ 2.0
+db_bin_centers = (db_bin_edges[:-1]+db_bin_edges[1:])/2.0
 
 # Init
 times_processed = []
@@ -264,13 +268,12 @@ num_period_bins = len(period_bin_centers)
 num_db_bins = len(db_bin_centers)
 
 # initial setup of 2D histogram
-hist_stack = np.zeros((num_period_bins, num_db_bins), dtype=np.uint64)
+hist_stack = np.zeros((num_period_bins,num_db_bins),dtype=np.uint64)
 
 # empty selection, set all histogram stacks to zeros
 if not used_count:
     current_hist_stack = hist_stack
-    current_hist_stack_cumulative = np.zeros_like(hist_stack, 
-                                                  dtype=np.float32)
+    current_hist_stack_cumulative = np.zeros_like(hist_stack,dtype=np.float32)
     current_times_used = used_times
 
 # concatenate all used spectra, evaluate index of amplitude bin each
