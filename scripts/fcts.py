@@ -19,6 +19,7 @@ from matplotlib import mlab
 
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
+from obspy import UTCDateTime
 from obspy.core.inventory import Inventory
 from obspy.core.util import AttribDict
 from obspy.signal.invsim import cosine_taper
@@ -404,6 +405,7 @@ def plot_histogram(fig, current_hist_stack, current_times_used,
     fig.ppsd=AttribDict()
     if "meshgrid" not in fig.ppsd:
         fig.meshgrid = np.meshgrid(xedges,db_bin_edges)
+        
     ppsd = ax.pcolormesh(fig.meshgrid[0], fig.meshgrid[1], data.T,
         cmap=fig.cmap, zorder=-1)
     fig.quadmesh = ppsd
