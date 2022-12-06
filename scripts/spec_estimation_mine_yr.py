@@ -15,9 +15,6 @@ No class is defined here, only necessary functions are in defs.py file.
 Code for 1 year of data or any length of time including several days. Need to 
 check spectral_estimation_mine.py for a day of data only.
 
-Calculations start on Jan 1 for now : need to update the code so we can choose
-any day we want during the year. (maj 05/12)
-
 Sections :
     . Collect of the data 
     . PPSD fixed information
@@ -42,7 +39,6 @@ PSS : the original script of the PPSD class of the module can be found at
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
-# import datetime
 # from datetime import date as date_n
 
 from matplotlib import mlab
@@ -67,15 +63,16 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
     
 """
 
-# Number of days (starting on the 1st of Jan)
-n = int(5)
+# Number of days and start
+num = int(5)
+day = 1 #1er janvier
 
 # Temporary variables
 temp_time=[]
-temp_binned_psds=[None]*(n-1) #Allocate space for data
+temp_binned_psds=[None]*365 #Allocate space for data
 starts=[];ends=[] #Every start and end of times
 
-for iday in np.arange(1,n,dtype=int):
+for iday in np.arange(day,day+num,dtype=int):
 
     # Nom du fichier
     sta = 'B017'
@@ -266,7 +263,11 @@ for iday in np.arange(1,n,dtype=int):
 
 # All days are include in the variables for the histogram
 times_processed=temp_time.tolist()
-binned_psds = [item for sublist in temp_binned_psds for item in sublist]
+res = []
+for val in temp_binned_psds:
+    if val != None :
+        res.append(val)
+binned_psds = [item for sublist in res for item in sublist]
 starttime=starts[0];endtime=ends[-1] #Start and end of the period
 
 """
@@ -361,7 +362,7 @@ color=int(input('Choose of the colormap (1 is obspy, 2 is McNamara) : '))
 if color==1:
     cmap = obspy_sequential
 elif color==2:
-    cmap = pqlx #McNamara color map (9)white background, rainbow color)
+    cmap = pqlx #McNamara color map (white background, rainbow color)
 else: 
     msg = "Error on the choosen number for the colormap"
     raise Exception(msg)
@@ -379,64 +380,7 @@ ax = fig.add_subplot(111)
 
 # Parameters
 
-if show_noise_models: #NOPE
-    for periods, noise_model in models:
-        if xaxis_frequency:
-            xdata = 1.0 / periods
-        else:
-            xdata = periods
-        ax.plot(xdata, noise_model, '0.4', linewidth=2, zorder=10)
-
-if show_earthquakes is not None: #NOPE
-    if len(show_earthquakes) == 2:
-        show_earthquakes = (show_earthquakes[0],
-                            show_earthquakes[0] + 0.1,
-                            show_earthquakes[1],
-                            show_earthquakes[1] + 1)
-    if len(show_earthquakes) == 3:
-        show_earthquakes += (show_earthquakes[-1] + 1, )
-    min_mag, max_mag, min_dist, max_dist = show_earthquakes
-    for key, data in earthquake_models.items():
-        magnitude, distance = key
-        frequencies, accelerations = data
-        accelerations = np.array(accelerations)
-        frequencies = np.array(frequencies)
-        periods = 1.0 / frequencies
-        # Eq.1 from Clinton and Cauzzi (2013) converts
-        # power to density
-        ydata = accelerations / (periods ** (-.5))
-        ydata = 20 * np.log10(ydata / 2)
-        if not (min_mag <= magnitude <= max_mag and
-                min_dist <= distance <= max_dist and
-                min(ydata) < self.db_bin_edges[-1]):
-            continue
-        xdata = periods
-        if xaxis_frequency:
-            xdata = frequencies
-        ax.plot(xdata, ydata, '0.4', linewidth=2)
-        leftpoint = np.argsort(xdata)[0]
-        if not ydata[leftpoint] < self.db_bin_edges[-1]:
-            continue
-        ax.text(xdata[leftpoint],
-                ydata[leftpoint],
-                'M%.1f\n%dkm' % (magnitude, distance),
-                ha='right', va='top',
-                color='w', weight='bold', fontsize='x-small',
-                path_effects=[withStroke(linewidth=3,
-                                         foreground='0.4')])
-
-if cumulative: #NOPE
-        label = "non-exceedance (cumulative) [%]"
-        if max_percentage is not None:
-            msg = ("Parameter 'max_percentage' is ignored when "
-                   "'cumulative=True'.")
-            warnings.warn(msg)
-        max_percentage = 100
-        if cumulative_number_of_colors is not None:
-            cmap = LinearSegmentedColormap(
-                name=cmap.name, segmentdata=cmap._segmentdata,
-                N=cumulative_number_of_colors)
-elif max_percentage is None: #OK
+if max_percentage is None: #OK
     # Set default only if cumulative is not True.
     max_percentage = 30
 
