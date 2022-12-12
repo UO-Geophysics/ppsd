@@ -6,7 +6,7 @@ Created on Mon Dec 12 10:44:29 2022
 @author: loispapin
 
 This script was made to help compare 2 sets of data on a PPSD plot. It is 
-using a combination of spec_estimation_mine.py and spec_estimation_mine_yr.py.
+using a combination of spec_estimation.py and spec_estimation_yr.py.
 The output figure is 2 PPSD of different cmap and transparencies.
 
 No class is defined here, only necessary functions are in defs.py file.
