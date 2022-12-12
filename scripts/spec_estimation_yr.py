@@ -14,7 +14,7 @@ using the ppsd.plot of the module.
 No class is defined here, only necessary functions are in defs.py file.
 
 Code for 1 year of data or any length of time including several days. Need to 
-check spectral_estimation_mine.py for a day of data only.
+check spectral_estimation.py for a day of data only.
 
 Sections :
     . Collect of the data 
