@@ -47,14 +47,14 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
         wdir='/Users/loispapin/Documents/Work/PNSN/2011')
 
 """
-    Read the data with the function read of the Obspy module. Identify the 
-    necessary infos from it and also get the metadata of the station response.
-    
+    Start of the script with times to choose : the day (var date) that
+    we compare with the period of time that we want (var day & num).
+    Then first calculations for the period and then the day.
 """
 
 # Start of the data and how long
 day = 155 #1er janvier
-num = 88
+num = 1
 # Day of data to compare
 date = date_n(2011,7,3)
 
@@ -64,7 +64,13 @@ temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
 for iday in np.arange(day,day+num,dtype=int):
-
+    
+    """
+        Read the data with the function read of the Obspy module. Identify the 
+        necessary infos from it and also get the metadata of the station response.
+        
+    """
+    
     # Nom du fichier
     sta = 'B017'
     net = 'PB'
@@ -138,9 +144,6 @@ for iday in np.arange(day,day+num,dtype=int):
     freq=freq[1:]
     psd_periods=1.0/freq[::-1]
     
-    # To be modified to select the wanted frequencies
-    # period_limits = (psd_periods[0],
-    #                  psd_periods[-1])
     # Calculation on 0.01-16Hz
     f1 = 0.01; f2 = 16; 
     period_limits = (1/f2,1/f1)
@@ -329,8 +332,9 @@ xedges = period_xedges
 xedges = 1.0 / xedges
 
 """
-    Read the data with the function read of the Obspy module. Identify the 
-    necessary infos from it and also get the metadata of the station response.
+    Another read of the data with the function read of the Obspy module for a 
+    day. Identify the necessary infos from it and also get the metadata of 
+    the station response.
     
 """
 
@@ -346,8 +350,6 @@ elif len(day) == 2:
     
 path = "/Users/loispapin/Documents/Work/PNSN/2011/Data/"
 filename = (path + sta + '/' + sta + '.' + net + '.' + yr + '.' + day)
-
-segm = 3600 #1h cut
 
 # 1 day 
 stream = read(filename)
@@ -379,12 +381,6 @@ metadata = client.get_stations(network=network,station=station,
     
 """
 
-ppsd_length                    = segm 
-overlap                        = 0.5
-period_smoothing_width_octaves = 1.0
-period_step_octaves            = 0.125
-db_bins                        = (-200, -50, 1.)
-
 ##13 segments overlapping 75% and truncate to next lower power of 2
 #number of points
 nfft=ppsd_length*sampling_rate 
@@ -401,10 +397,6 @@ _,freq=mlab.psd(np.ones(leng),nfft,sampling_rate,noverlap=nlap)
 #leave out first adn last entry (offset)
 freq=freq[1:]
 psd_periods=1.0/freq[::-1]
-
-# Calculation on 0.01-16Hz
-f1 = 0.01; f2 = 16; 
-period_limits = (1/f2,1/f1)
 
 period_binning = setup_period_binning(psd_periods,
                                       period_smoothing_width_octaves,
@@ -585,8 +577,9 @@ xedges = 1.0 / xedges
     
     Possibility to use the same colomap as [McNamara2004], cf. cmap. 
     
-    The #NOPE means we don't use the particular parameter. If some parameters 
-    are missing, check the trash.py file with already written script.
+    The plot will do first the PSSD of the period of time (data_yr), and 
+    then the PSSD of the day that we compared. 2 differents cmap for the
+    plot to better show the differences.
     
 """
 
