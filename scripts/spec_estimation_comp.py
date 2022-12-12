@@ -245,6 +245,20 @@ for iday in np.arange(day,day+num,dtype=int):
             
     temp_time=np.append(temp_time,times_processed)
     
+    # Suivi du temps
+    if iday==50:
+        print('50e jour')
+    elif iday==100:
+        print('100e jour')
+    elif iday==150:
+        print('150e jour')
+    elif iday==200:
+        print('200e jour')
+    elif iday==250:
+        print('250e jour')
+    elif iday==300:
+        print('300e jour')
+
     # Init
     if changed:
         current_hist_stack            = None
