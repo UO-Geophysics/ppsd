@@ -75,7 +75,6 @@ if len(day) == 1:
 elif len(day) == 2:
     day = ('0' + day)
     
-    
 path = "/Users/loispapin/Documents/Work/PNSN/2011/Data/"
 filename = (path + sta + '/' + sta + '.' + net + '.' + yr + '.' + day)
 
@@ -383,10 +382,9 @@ ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
 title = "%s   %s -- %s  (%i/%i segments)"
 title = title % (iid,
-                 UTCDateTime(ns=times_processed[0]).date,
-                 UTCDateTime(ns=times_processed[-1]).date,
-                 len(current_times_used),
-                 len(times_processed))
+                 UTCDateTime(ns=int(times_processed[0])).date,
+                 UTCDateTime(ns=int(times_processed[-1])).date,
+                 len(current_times_used),len(times_processed))
 ax.set_title(title)
 
 # Show the figure
