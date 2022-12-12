@@ -3,6 +3,7 @@
 """
 Created on Mon Nov  7 10:03:38 2022
 Working on Mon Nov 28 15:18:23 2022
+Update  on Mon Dec 12 09:55:37 2022
 
 @author: loispapin
 
@@ -42,9 +43,7 @@ import matplotlib.pyplot as plt
 from datetime import date as date_n
 
 from matplotlib import mlab
-from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.ticker import FormatStrFormatter
-from matplotlib.patheffects import withStroke
 
 from obspy import read
 from obspy import Stream, Trace, UTCDateTime
@@ -64,7 +63,7 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Day of data
-date = date_n(2011,7,3)
+date = date_n(2011,7,31)
 
 # Nom du fichier
 sta = 'B017'
@@ -75,7 +74,8 @@ if len(day) == 1:
     day = ('00' + day)
 elif len(day) == 2:
     day = ('0' + day)
-
+    
+    
 path = "/Users/loispapin/Documents/Work/PNSN/2011/Data/"
 filename = (path + sta + '/' + sta + '.' + net + '.' + yr + '.' + day)
 
@@ -85,11 +85,11 @@ segm = 3600 #1h cut
 stream = read(filename)
 trace  = stream[2] #Composante Z
 
-# # Cut of the data on choosen times
-# starttime = UTCDateTime(date)+(3600*2.5) #2h30
-# endtime   = starttime+segm
-# stream = read(filename,starttime=starttime,endtime=endtime)
-# trace  = stream[2] #Composante Z
+# Cut of the data on choosen times
+starttime = UTCDateTime(date)+(3600*2.5) #2h30
+endtime   = starttime+segm
+stream = read(filename,starttime=starttime,endtime=endtime)
+trace  = stream[2] #Composante Z
 
 stats         = trace.stats
 network       = trace.stats.network
@@ -134,11 +134,8 @@ _,freq=mlab.psd(np.ones(leng),nfft,sampling_rate,noverlap=nlap)
 freq=freq[1:]
 psd_periods=1.0/freq[::-1]
 
-# To be modified to select the wanted frequencies
-# period_limits = (psd_periods[0],
-#                  psd_periods[-1])
 # Calculation on 0.01-16Hz
-f1 = 1; f2 = 12; 
+f1 = 0.01; f2 = 16; 
 period_limits = (1/f2,1/f1)
 
 period_binning = setup_period_binning(psd_periods,
@@ -319,15 +316,9 @@ if current_hist_stack is None:
     raise Exception(msg)
 
 # Initialisation of the parameters
-filename=None
-
-special_handling = None
-
 grid=True
-show=True
-draw=False
-
-max_percentage=None
+max_percentage=30
+color_limits = (0, max_percentage)
 label = "[%]"
 period_lim=(f1,f2) 
 xaxis_frequency=True #False
@@ -342,50 +333,52 @@ else:
     warnings.warn(msg)
     cmap = obspy_sequential
 
-cumulative=False
-cumulative_number_of_colors=20
+# Computations needed
+current_histogram = current_hist_stack
+current_histogram_count = len(current_times_used)
+data = (current_histogram * 100.0 / (current_histogram_count or 1))
+xedges = period_xedges
+xedges = 1.0 / xedges
 
-show_noise_models=False #True
-show_earthquakes=None
-show_histogram=True
+# Start of the figure
+plt.ioff()
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
+# Create figure
+fig, ax = plt.subplots() 
 
-# Parameters
-
-if max_percentage is None: #OK
-    # Set default only if cumulative is not True.
-    max_percentage = 30
-
-# Parameters of fig
-fig.cumulative = cumulative
-fig.cmap = cmap
 fig.label = label
 fig.max_percentage = max_percentage
 fig.grid = grid
 fig.xaxis_frequency = xaxis_frequency
+fig.color_limits = color_limits
+fig.cmap=cmap
 
-if max_percentage is not None: #OK
-    color_limits = (0, max_percentage)
-    fig.color_limits = color_limits
-    
-    # PPSD figure
-    plot_histogram(fig, current_hist_stack, current_times_used, 
-                   period_xedges, db_bin_edges, draw, filename)
+xlim = ax.get_xlim()
+fig.meshgrid = np.meshgrid(xedges,db_bin_edges)
+# PPSD
+ppsd=ax.pcolormesh(fig.meshgrid[0], fig.meshgrid[1], 
+                      data.T, cmap=fig.cmap, zorder=2, alpha=1)
+
+# Colorbar
+cb = plt.colorbar(ppsd,ax=ax)
+cb.mappable.set_clim(*fig.color_limits)
+cb.set_label(fig.label)
+fig.colorbar = cb
+ppsd.set_clim(*fig.color_limits)
+
+# Grid (doesn't work)
+color = {"color": "0.7"}
+ax.grid(True, which="major", **color)
+ax.grid(True, which="minor", **color)
 
 # Axis and title
-if xaxis_frequency: #OK
-    ax.set_xlabel('Frequency [Hz]')
-    ax.invert_xaxis()
-else:
-    ax.set_xlabel('Period [s]')
+ax.set_xlabel('Frequency [Hz]')
+ax.invert_xaxis()
 ax.set_xscale('log')
 ax.set_xlim(period_lim)
 ax.xaxis.set_major_formatter(FormatStrFormatter("%g")) #Pas de 10^
 
-if special_handling is None: #OK
-    ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
+ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
 title = "%s   %s -- %s  (%i/%i segments)"
@@ -396,13 +389,6 @@ title = title % (iid,
                  len(times_processed))
 ax.set_title(title)
 
-# Catch underflow warnings due to plotting on log-scale.
-with np.errstate(all="ignore"):
-    if filename is not None:
-        plt.savefig(filename)
-        plt.close()
-    elif show:
-        plt.draw()
-        plt.show()
-    else:
-        plt.draw()
+# Show the figure
+plt.ion()
+plt.show()
