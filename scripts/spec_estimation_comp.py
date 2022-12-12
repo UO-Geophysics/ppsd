@@ -88,12 +88,6 @@ for iday in np.arange(day,day+num,dtype=int):
     # 1 day 
     stream = read(filename)
     trace  = stream[2] #Composante Z
-
-    # # Cut of the data on choosen times
-    # starttime = UTCDateTime("2011-07-03T02:30:00.000")
-    # endtime   = starttime+segm
-    # stream = read(filename,starttime=starttime,endtime=endtime)
-    # trace  = stream[2] #Composante Z
     
     stats         = trace.stats
     network       = trace.stats.network
@@ -354,8 +348,6 @@ xedges = 1.0 / xedges
 date = date_n(2011,8,31)
 
 # Nom du fichier
-sta = 'B017'
-net = 'PB'
 yr  = str(date.timetuple().tm_year)
 day = str(date.timetuple().tm_yday)
 if len(day) == 1:
