@@ -40,7 +40,6 @@ PSS : the original script of the PPSD class of the module can be found at
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
-# from datetime import date as date_n
 
 from matplotlib import mlab
 from matplotlib.ticker import FormatStrFormatter
@@ -64,7 +63,7 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 
 # Start of the data and how long
 day = 155 #1er janvier
-num = 88
+num = 2
 
 # Temporary variables
 temp_time=[]
@@ -410,10 +409,9 @@ ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
 title = "%s   %s -- %s  (%i/%i segments)"
 title = title % (iid,
-                 UTCDateTime(ns=times_processed[0]).date,
-                 UTCDateTime(ns=times_processed[-1]).date,
-                 len(current_times_used),
-                 len(times_processed))
+                 UTCDateTime(ns=int(times_processed[0])).date,
+                 UTCDateTime(ns=int(times_processed[-1])).date,
+                 len(current_times_used),len(times_processed))
 ax.set_title(title)
 
 # Show the figure
