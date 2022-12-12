@@ -47,16 +47,13 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
         wdir='/Users/loispapin/Documents/Work/PNSN/2011')
 
 """
-    Start of the script with times to choose : the day (var date) that
-    we compare with the period of time that we want (var day & num).
-    Then first calculations for the period and then the day.
+    Start of the script with time to choose : the period of time that we want 
+    (var day & num) to compare a day with. 
 """
 
 # Start of the data and how long
-day = 155 #1er janvier
-num = 1
-# Day of data to compare
-date = date_n(2011,7,3)
+day = 1 #1er janvier
+num = 365
 
 # Temporary variables
 temp_time=[]
@@ -332,11 +329,15 @@ xedges = period_xedges
 xedges = 1.0 / xedges
 
 """
+    Start of the script with time to choose : the day that we want to compare>
     Another read of the data with the function read of the Obspy module for a 
     day. Identify the necessary infos from it and also get the metadata of 
     the station response.
     
 """
+
+# Day of data to compare
+date = date_n(2011,7,3)
 
 # Nom du fichier
 sta = 'B017'
