@@ -3,6 +3,7 @@
 """
 Created on Thu Dec  1 10:23:16 2022
 Working on Mon Dec  2 17:05:48 2022
+Update  on Mon Dec 12 09:55:37 2022
 
 @author: loispapin
 
@@ -62,12 +63,12 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Start of the data and how long
-day = 1 #1er janvier
-num = 5
+day = 155 #1er janvier
+num = 88
 
 # Temporary variables
 temp_time=[]
-temp_binned_psds=[None]*365 #Allocate space for data
+temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
 for iday in np.arange(day,day+num,dtype=int):
@@ -86,10 +87,10 @@ for iday in np.arange(day,day+num,dtype=int):
     
     path = "/Users/loispapin/Documents/Work/PNSN/2011/Data/"
     filename = (path + sta + '/' + sta + '.' + net + '.' + yr + '.' + day)
-    
+        
     segm = 3600 #1h cut
     
-     # 1 day 
+    # 1 day 
     stream = read(filename)
     trace  = stream[2] #Composante Z
 
@@ -341,16 +342,10 @@ if current_hist_stack is None:
     msg = 'No data accumulated'
     raise Exception(msg)
 
-# Init
-filename=None
-
-special_handling = None
-
+# Initialisation of the parameters
 grid=True
-show=True
-draw=False
-
-max_percentage=None
+max_percentage=30
+color_limits = (0, max_percentage)
 label = "[%]"
 period_lim=(f1,f2) 
 xaxis_frequency=True #False
@@ -362,70 +357,65 @@ elif color==2:
     cmap = pqlx #McNamara color map (white background, rainbow color)
 else: 
     msg = "Error on the choosen number for the colormap"
-    raise Exception(msg)
+    warnings.warn(msg)
     cmap = obspy_sequential
 
-cumulative=False
-cumulative_number_of_colors=20
+# Computations needed
+current_histogram = current_hist_stack
+current_histogram_count = len(current_times_used)
+data = (current_histogram * 100.0 / (current_histogram_count or 1))
+xedges = period_xedges
+xedges = 1.0 / xedges
 
-show_noise_models=False #True
-show_earthquakes=None
-show_histogram=True
+# Start of the figure
+plt.ioff()
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
+# Create figure
+fig, ax = plt.subplots() 
 
-# Parameters
-
-if max_percentage is None: #OK
-    # Set default only if cumulative is not True.
-    max_percentage = 30
-
-# Parameters of fig
-fig.cumulative = cumulative
-fig.cmap = cmap
 fig.label = label
 fig.max_percentage = max_percentage
 fig.grid = grid
 fig.xaxis_frequency = xaxis_frequency
+fig.color_limits = color_limits
+fig.cmap=cmap
 
-if max_percentage is not None: #OK
-    color_limits = (0, max_percentage)
-    fig.color_limits = color_limits
-    
-    # PPSD figure
-    plot_histogram(fig, current_hist_stack, current_times_used, 
-                   period_xedges, db_bin_edges, draw, filename)
+xlim = ax.get_xlim()
+fig.meshgrid = np.meshgrid(xedges,db_bin_edges)
+# PPSD
+ppsd=ax.pcolormesh(fig.meshgrid[0], fig.meshgrid[1], 
+                      data.T, cmap=fig.cmap, zorder=2, alpha=1)
+
+# Colorbar
+cb = plt.colorbar(ppsd,ax=ax)
+cb.mappable.set_clim(*fig.color_limits)
+cb.set_label(fig.label)
+fig.colorbar = cb
+ppsd.set_clim(*fig.color_limits)
+
+# Grid (doesn't work)
+color = {"color": "0.7"}
+ax.grid(True, which="major", **color)
+ax.grid(True, which="minor", **color)
 
 # Axis and title
-if xaxis_frequency: #OK
-    ax.set_xlabel('Frequency [Hz]')
-    ax.invert_xaxis()
-else:
-    ax.set_xlabel('Period [s]')
+ax.set_xlabel('Frequency [Hz]')
+ax.invert_xaxis()
 ax.set_xscale('log')
 ax.set_xlim(period_lim)
 ax.xaxis.set_major_formatter(FormatStrFormatter("%g")) #Pas de 10^
 
-if special_handling is None: #OK
-    ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
+ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
 title = "%s   %s -- %s  (%i/%i segments)"
 title = title % (iid,
-                  UTCDateTime(ns=int(times_processed[0])).date,
-                  UTCDateTime(ns=int(times_processed[-1])).date,
-                  len(current_times_used),
-                  len(times_processed))
+                 UTCDateTime(ns=times_processed[0]).date,
+                 UTCDateTime(ns=times_processed[-1]).date,
+                 len(current_times_used),
+                 len(times_processed))
 ax.set_title(title)
 
-# Catch underflow warnings due to plotting on log-scale.
-with np.errstate(all="ignore"):
-    if filename is not None:
-        plt.savefig(filename)
-        plt.close()
-    elif show:
-        plt.draw()
-        plt.show()
-    else:
-        plt.draw()
+# Show the figure
+plt.ion()
+plt.show()
