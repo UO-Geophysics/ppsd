@@ -337,7 +337,7 @@ xedges = 1.0 / xedges
 """
 
 # Day of data to compare
-date = date_n(2011,7,3)
+date = date_n(2011,8,31)
 
 # Nom du fichier
 sta = 'B017'
