@@ -70,12 +70,12 @@ temp_time=[]
 temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
-for iday in np.arange(day,day+num,dtype=int):
+# Nom du fichier
+sta = 'B017'
+net = 'PB'
+yr  = '2011'
 
-    # Nom du fichier
-    sta = 'B017'
-    net = 'PB'
-    yr  = '2011'
+for iday in np.arange(day,day+num,dtype=int):
     
     if len(str(iday)) == 1:
         day = ('00' + str(iday))
