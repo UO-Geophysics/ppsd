@@ -19,6 +19,9 @@ Sections :
         Before : 2 times (2 sets of time/data)
     . Plot of the histograms
     
+PS : For GMW (UW) it's only EHZ for 2011 but there are a lot of traces so 
+stream.merge() for all
+    
 """
 
 """
@@ -60,6 +63,11 @@ temp_time=[]
 temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
+# Nom du fichier
+sta = 'GMW'
+net = 'UW'
+yr  = '2011'
+
 for iday in np.arange(day,day+num,dtype=int):
     
     """
@@ -67,11 +75,6 @@ for iday in np.arange(day,day+num,dtype=int):
         necessary infos from it and also get the metadata of the station response.
         
     """
-    
-    # Nom du fichier
-    sta = 'B017'
-    net = 'PB'
-    yr  = '2011'
     
     if len(str(iday)) == 1:
         day = ('00' + str(iday))
@@ -87,8 +90,12 @@ for iday in np.arange(day,day+num,dtype=int):
     
     # 1 day 
     stream = read(filename)
-    trace  = stream[2] #Composante Z
-    
+    if len(stream)>1:
+        stream.merge()
+        trace = stream[0]
+    else:
+        trace = stream[2]
+            
     stats         = trace.stats
     network       = trace.stats.network
     station       = trace.stats.station
@@ -252,7 +259,7 @@ for iday in np.arange(day,day+num,dtype=int):
         print('250e jour')
     elif iday==300:
         print('300e jour')
-
+    
     # Init
     if changed:
         current_hist_stack            = None
