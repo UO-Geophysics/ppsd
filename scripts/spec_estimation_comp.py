@@ -30,6 +30,7 @@ stream.merge() for all
     
 """
 
+import os
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
@@ -55,8 +56,8 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Start of the data and how long
-day = 1 #1er janvier
-num = 365
+day = 181 #1er janvier
+num = 4
 
 # Temporary variables
 temp_time=[]
@@ -64,8 +65,8 @@ temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
 # Nom du fichier
-sta = 'GMW'
-net = 'UW'
+sta = 'B018'
+net = 'PB'
 yr  = '2011'
 
 for iday in np.arange(day,day+num,dtype=int):
@@ -88,13 +89,13 @@ for iday in np.arange(day,day+num,dtype=int):
         
     segm = 3600 #1h cut
     
-    # 1 day 
+    # 1 day
     stream = read(filename)
     if len(stream)>1:
         stream.merge()
         trace = stream[0]
     else:
-        trace = stream[2]
+        trace = stream[0]
             
     stats         = trace.stats
     network       = trace.stats.network
@@ -123,7 +124,7 @@ for iday in np.arange(day,day+num,dtype=int):
     overlap                        = 0.5
     period_smoothing_width_octaves = 1.0
     period_step_octaves            = 0.125
-    db_bins                        = (-200, -50, 1.)
+    db_bins                        = (-170, -120, 0.5)
     
     ##13 segments overlapping 75% and truncate to next lower power of 2
     #number of points
@@ -143,7 +144,7 @@ for iday in np.arange(day,day+num,dtype=int):
     psd_periods=1.0/freq[::-1]
     
     # Calculation on 0.01-16Hz
-    f1 = 0.01; f2 = 16; 
+    f1 = 1; f2 = 10; 
     period_limits = (1/f2,1/f1)
     
     period_binning = setup_period_binning(psd_periods,
@@ -295,6 +296,9 @@ used_indices = selected.nonzero()[0]
 used_count   = len(used_indices)
 used_times   = np.array(times_processed)[used_indices]
 
+day1=UTCDateTime(ns=int(times_processed[0])).date
+day2=UTCDateTime(ns=int(times_processed[-1])).date
+
 num_period_bins = len(period_bin_centers)
 num_db_bins = len(db_bin_centers)
 
@@ -352,7 +356,7 @@ xedges = 1.0 / xedges
 """
 
 # Day of data to compare
-date = date_n(2011,8,31)
+date = date_n(2011,7,1)
 
 # Nom du fichier
 yr  = str(date.timetuple().tm_year)
@@ -647,12 +651,9 @@ ax.xaxis.set_major_formatter(FormatStrFormatter("%g")) #Pas de 10^
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
-title = "%s   %s -- %s  (%i/%i segments)"
-title = title % (iid,
-                 UTCDateTime(ns=times_processed[0]).date,
-                 UTCDateTime(ns=times_processed[-1]).date,
-                 len(current_times_used),
-                 len(times_processed))
+title = "%s   %s -- %s  (%i segment : %s)"
+title = title % (iid,day1,day2,len(current_times_used),
+                 UTCDateTime(ns=int(times_processed[0])).date)
 ax.set_title(title)
 
 # Show the figure
