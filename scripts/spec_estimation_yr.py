@@ -62,8 +62,8 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Start of the data and how long
-day = 155 #1er janvier
-num = 2
+day = 185 #1er janvier
+num = 20
 
 # Temporary variables
 temp_time=[]
@@ -71,12 +71,12 @@ temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
 # Nom du fichier
-sta = 'B017'
+sta = 'B023'
 net = 'PB'
 yr  = '2011'
 
 for iday in np.arange(day,day+num,dtype=int):
-    
+
     if len(str(iday)) == 1:
         day = ('00' + str(iday))
     elif len(str(iday)) == 2:
@@ -89,15 +89,13 @@ for iday in np.arange(day,day+num,dtype=int):
         
     segm = 3600 #1h cut
     
-    # 1 day 
+    # 1 day
     stream = read(filename)
-    trace  = stream[2] #Composante Z
-
-    # # Cut of the data on choosen times
-    # starttime = UTCDateTime("2011-07-03T02:30:00.000")
-    # endtime   = starttime+segm
-    # stream = read(filename,starttime=starttime,endtime=endtime)
-    # trace  = stream[2] #Composante Z
+    if len(stream)>1:
+        stream.merge()
+        trace = stream[0]
+    else:
+        trace = stream[0]
     
     stats         = trace.stats
     network       = trace.stats.network
@@ -126,7 +124,7 @@ for iday in np.arange(day,day+num,dtype=int):
     overlap                        = 0.5
     period_smoothing_width_octaves = 1.0
     period_step_octaves            = 0.125
-    db_bins                        = (-200, -50, 1.)
+    db_bins                        = (-155, -115, 0.5)
     
     ##13 segments overlapping 75% and truncate to next lower power of 2
     #number of points
@@ -145,11 +143,8 @@ for iday in np.arange(day,day+num,dtype=int):
     freq=freq[1:]
     psd_periods=1.0/freq[::-1]
     
-    # To be modified to select the wanted frequencies
-    # period_limits = (psd_periods[0],
-    #                  psd_periods[-1])
     # Calculation on 0.01-16Hz
-    f1 = 0.01; f2 = 16; 
+    f1 = 1; f2 = 10; 
     period_limits = (1/f2,1/f1)
     
     period_binning = setup_period_binning(psd_periods,
