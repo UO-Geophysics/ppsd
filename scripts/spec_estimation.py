@@ -14,7 +14,7 @@ using the ppsd.plot of the module.
 No class is defined here, only necessary functions are in defs.py file.
 
 Code for 1 day of data or a section of it. Need to check 
-spec_estimation_yr.py for a year of data.
+spectral_estimation_yr.py for a year of data.
 
 Sections :
     . Collect of the data 
@@ -63,10 +63,10 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Day of data
-date = date_n(2011,7,31)
+date = date_n(2011,8,5)
 
 # Nom du fichier
-sta = 'B017'
+sta = 'B023'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
 day = str(date.timetuple().tm_yday)
@@ -114,7 +114,7 @@ ppsd_length                    = segm
 overlap                        = 0.5
 period_smoothing_width_octaves = 1.0
 period_step_octaves            = 0.125
-db_bins                        = (-200, -50, 1.)
+db_bins                        = (-170, -100, 0.5)
 
 ##13 segments overlapping 75% and truncate to next lower power of 2
 #number of points
@@ -134,7 +134,7 @@ freq=freq[1:]
 psd_periods=1.0/freq[::-1]
 
 # Calculation on 0.01-16Hz
-f1 = 0.01; f2 = 16; 
+f1 = 1; f2 = 10; 
 period_limits = (1/f2,1/f1)
 
 period_binning = setup_period_binning(psd_periods,
@@ -316,21 +316,21 @@ if current_hist_stack is None:
 
 # Initialisation of the parameters
 grid=True
-max_percentage=30
+max_percentage=15
 color_limits = (0, max_percentage)
 label = "[%]"
 period_lim=(f1,f2) 
 xaxis_frequency=True #False
 
-color=int(input('Choose of the colormap (1 is obspy, 2 is McNamara) : '))
-if color==1:
-    cmap = obspy_sequential
-elif color==2:
-    cmap = pqlx #McNamara color map (white background, rainbow color)
-else: 
-    msg = "Error on the choosen number for the colormap"
-    warnings.warn(msg)
-    cmap = obspy_sequential
+# color=int(input('Choose of the colormap (1 is obspy, 2 is McNamara) : '))
+# if color==1:
+cmap = obspy_sequential
+# elif color==2:
+#     cmap = pqlx #McNamara color map (white background, rainbow color)
+# else: 
+#     msg = "Error on the choosen number for the colormap"
+#     warnings.warn(msg)
+#     cmap = obspy_sequential
 
 # Computations needed
 current_histogram = current_hist_stack
@@ -356,7 +356,7 @@ xlim = ax.get_xlim()
 fig.meshgrid = np.meshgrid(xedges,db_bin_edges)
 # PPSD
 ppsd=ax.pcolormesh(fig.meshgrid[0], fig.meshgrid[1], 
-                      data.T, cmap=fig.cmap, zorder=2, alpha=1)
+                      data.T, cmap=fig.cmap, zorder=2, alpha=1,shading='auto')
 
 # Colorbar
 cb = plt.colorbar(ppsd,ax=ax)
@@ -379,6 +379,7 @@ ax.xaxis.set_major_formatter(FormatStrFormatter("%g")) #Pas de 10^
 
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
+# ax.set_ylim(-160,-120)
 
 title = "%s   %s -- %s  (%i/%i segments)"
 title = title % (iid,

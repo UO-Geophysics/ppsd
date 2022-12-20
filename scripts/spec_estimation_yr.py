@@ -62,8 +62,8 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Start of the data and how long
-day = 185 #1er janvier
-num = 20
+day = 189 
+num = 8
 
 # Temporary variables
 temp_time=[]
@@ -71,7 +71,7 @@ temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
 # Nom du fichier
-sta = 'B023'
+sta = 'B018'
 net = 'PB'
 yr  = '2011'
 
@@ -91,11 +91,15 @@ for iday in np.arange(day,day+num,dtype=int):
     
     # 1 day
     stream = read(filename)
-    if len(stream)>1:
-        stream.merge()
-        trace = stream[0]
-    else:
-        trace = stream[0]
+    trace = stream[2]
+    print(trace)
+    
+    # # Condition for some station ### need to be improve
+    # if len(stream)>1:
+    #     stream.merge()
+    #     trace = stream[0]
+    # else:
+    #     trace = stream[0]
     
     stats         = trace.stats
     network       = trace.stats.network
@@ -124,7 +128,7 @@ for iday in np.arange(day,day+num,dtype=int):
     overlap                        = 0.5
     period_smoothing_width_octaves = 1.0
     period_step_octaves            = 0.125
-    db_bins                        = (-155, -115, 0.5)
+    db_bins                        = (-170, -100, 0.5)
     
     ##13 segments overlapping 75% and truncate to next lower power of 2
     #number of points
@@ -338,21 +342,21 @@ if current_hist_stack is None:
 
 # Initialisation of the parameters
 grid=True
-max_percentage=30
+max_percentage=15
 color_limits = (0, max_percentage)
 label = "[%]"
 period_lim=(f1,f2) 
 xaxis_frequency=True #False
-
-color=int(input('Choose of the colormap (1 is obspy, 2 is McNamara) : '))
-if color==1:
-    cmap = obspy_sequential
-elif color==2:
-    cmap = pqlx #McNamara color map (white background, rainbow color)
-else: 
-    msg = "Error on the choosen number for the colormap"
-    warnings.warn(msg)
-    cmap = obspy_sequential
+cmap = pqlx
+# color=int(input('Choose of the colormap (1 is obspy, 2 is McNamara) : '))
+# if color==1:
+#     cmap = obspy_sequential
+# elif color==2:
+#     cmap = pqlx #McNamara color map (white background, rainbow color)
+# else: 
+#     msg = "Error on the choosen number for the colormap"
+#     warnings.warn(msg)
+#     cmap = obspy_sequential
 
 # Computations needed
 current_histogram = current_hist_stack

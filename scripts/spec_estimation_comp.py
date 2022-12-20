@@ -30,7 +30,6 @@ stream.merge() for all
     
 """
 
-import os
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
@@ -56,8 +55,8 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Start of the data and how long
-day = 181 #1er janvier
-num = 4
+day = 189 
+num = 8
 
 # Temporary variables
 temp_time=[]
@@ -65,7 +64,7 @@ temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
 # Nom du fichier
-sta = 'B018'
+sta = 'B023'
 net = 'PB'
 yr  = '2011'
 
@@ -91,11 +90,15 @@ for iday in np.arange(day,day+num,dtype=int):
     
     # 1 day
     stream = read(filename)
-    if len(stream)>1:
-        stream.merge()
-        trace = stream[0]
-    else:
-        trace = stream[0]
+    trace = stream[2]
+    print(trace)
+    
+    # # Condition for some station ### need to be improve
+    # if len(stream)>1:
+    #     stream.merge()
+    #     trace = stream[0]
+    # else:
+    #     trace = stream[0]
             
     stats         = trace.stats
     network       = trace.stats.network
@@ -124,7 +127,7 @@ for iday in np.arange(day,day+num,dtype=int):
     overlap                        = 0.5
     period_smoothing_width_octaves = 1.0
     period_step_octaves            = 0.125
-    db_bins                        = (-170, -120, 0.5)
+    db_bins                        = (-170, -100, 0.5)
     
     ##13 segments overlapping 75% and truncate to next lower power of 2
     #number of points
@@ -356,7 +359,9 @@ xedges = 1.0 / xedges
 """
 
 # Day of data to compare
-date = date_n(2011,7,1)
+date = date_n(2011,6,29) #lot of events (south)
+# date = date_n(2011,7,14) #no events
+# date = date_n(2011,8,5) #lot of events (north)
 
 # Nom du fichier
 yr  = str(date.timetuple().tm_year)
@@ -603,7 +608,7 @@ xedges = 1.0 / xedges
 
 # Initialisation of the parameters
 grid=True
-max_percentage=30
+max_percentage=15
 color_limits = (0, max_percentage)
 label = "[%]"
 period_lim=(f1,f2) 
@@ -636,12 +641,14 @@ cb.set_label(fig.label)
 fig.colorbar = cb
 ppsd1.set_clim(*fig.color_limits)
 
-# Grid (doesn't work)
+# Grid 
+### doesn't work, why ?
 color = {"color": "0.7"}
 ax.grid(True, which="major", **color)
 ax.grid(True, which="minor", **color)
 
-# Axis and title
+# Axis and title 
+### pb de ticks -> need to be named from 1 to 10
 ax.set_xlabel('Frequency [Hz]')
 ax.invert_xaxis()
 ax.set_xscale('log')
