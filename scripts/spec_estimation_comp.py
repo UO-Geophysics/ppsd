@@ -33,8 +33,8 @@ stream.merge() for all
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
-from datetime import date as date_n
 
+from datetime import date as date_n
 from matplotlib import mlab
 from matplotlib.ticker import FormatStrFormatter
 
@@ -55,8 +55,9 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Start of the data and how long
-day = 189 
-num = 8
+date = date_n(2011,6,23)
+day = date.timetuple().tm_yday 
+num = 8 #8 = 1 semaine
 
 # Temporary variables
 temp_time=[]
@@ -64,7 +65,7 @@ temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
 # Nom du fichier
-sta = 'B023'
+sta = 'B018'
 net = 'PB'
 yr  = '2011'
 
@@ -99,7 +100,7 @@ for iday in np.arange(day,day+num,dtype=int):
     #     trace = stream[0]
     # else:
     #     trace = stream[0]
-            
+    
     stats         = trace.stats
     network       = trace.stats.network
     station       = trace.stats.station
@@ -107,6 +108,11 @@ for iday in np.arange(day,day+num,dtype=int):
     starttime     = trace.stats.starttime
     endtime       = trace.stats.endtime
     sampling_rate = trace.stats.sampling_rate
+    
+    # Cut of the data on choosen times
+    endtime = starttime+segm
+    stream = read(filename,starttime=starttime,endtime=endtime)
+    trace  = stream[2] #Composante Z    
     
     iid = "%(network)s.%(station)s.%(location)s.%(channel)s" % stats
     
