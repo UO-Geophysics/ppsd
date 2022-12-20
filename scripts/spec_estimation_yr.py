@@ -3,7 +3,7 @@
 """
 Created on Thu Dec  1 10:23:16 2022
 Working on Mon Dec  2 17:05:48 2022
-Update  on Mon Dec 12 09:55:37 2022
+Update  on Mon Dec 20 
 
 @author: loispapin
 
@@ -63,9 +63,9 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2011,8,1)
+date = date_n(2011,1,1)
 day = date.timetuple().tm_yday 
-num = 8 #8 = 1 semaine
+num = 365 #8 = 1 semaine
 
 # Temporary variables
 temp_time=[]
@@ -94,7 +94,6 @@ for iday in np.arange(day,day+num,dtype=int):
     # 1 day
     stream = read(filename)
     trace = stream[2]
-    print(trace)
     
     # # Condition for some station ### need to be improve
     # if len(stream)>1:
@@ -111,10 +110,13 @@ for iday in np.arange(day,day+num,dtype=int):
     endtime       = trace.stats.endtime
     sampling_rate = trace.stats.sampling_rate
     
-    # # Cut of the data on choosen times
-    # endtime = starttime+segm
-    # stream = read(filename,starttime=starttime,endtime=endtime)
-    # trace  = stream[2] #Composante Z
+    # Cut of the data on choosen times
+    starttime = starttime+(3600*2.5)
+    endtime   = starttime+segm
+    stream = read(filename,starttime=starttime,endtime=endtime)
+    trace  = stream[2] #Composante Z 
+    
+    print(trace)
     
     iid = "%(network)s.%(station)s.%(location)s.%(channel)s" % stats
     
