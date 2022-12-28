@@ -23,11 +23,11 @@ Sections :
     . Calculation of the 2D-histogram
     . Plot of the histogram
     
-PS : other parameters/lines of code are available in trash.py (all related
-to the plot part)
+PS : other parameters/lines of code are available in trash.py
 PSS : the original script of the PPSD class of the module can be found at
 /opt/anaconda3/lib/python3.9/site-packages/obspy/signal/spectral_estimation.py
 
+Last time checked on Wed Dec 28
 """
 
 

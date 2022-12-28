@@ -7,6 +7,8 @@ Created on Mon Nov  7 10:56:05 2022
 
 All the functions used in the scripts of spectral estimation (PPSD)
 are here. This is made to avoid a bigger script.
+
+Last time checked on Wed Dec 28
 """
 
 import bisect
@@ -108,7 +110,7 @@ def merge_method(skip_on_gaps):
     if skip_on_gaps:
         return -1
     else:
-        return 0        
+        return 0
 
 def sanity_check(trace,iid,sampling_rate):
     """
@@ -327,7 +329,7 @@ def insert_processed_data(times_processed,binned_psds,utcdatetime,spectrum):
     times_processed.insert(ind, t)
     binned_psds.insert(ind, spectrum)
 
-def stack_selection(current_times_all_details,times_processed, starttime=None, 
+def stack_selection(current_times_all_details,times_processed, starttime=None,
                     endtime=None):
     """
     For details on restrictions see :meth:`calculate_histogram`.
@@ -372,7 +374,7 @@ def get_times_all_details(current_times_all_details,times_processed):
         current_times_all_details = times_all_details
         return times_all_details
 
-def plot_histogram(fig, current_hist_stack, current_times_used, 
+def plot_histogram(fig, current_hist_stack, current_times_used,
                    period_xedges, db_bin_edges, draw, filename):
     """
     Reuse a previously created figure returned by `plot(show=False)`
@@ -382,7 +384,7 @@ def plot_histogram(fig, current_hist_stack, current_times_used,
     Note that many aspects of the plot are statically set during the first
     :meth:`plot()` call, so this routine can only be used to update with
     data from a new stack.
-    """ 
+    """
     ax = fig.axes[0]
     xlim = ax.get_xlim()
     

@@ -10,7 +10,7 @@ This script was made to help compare 2 sets of data on a PPSD plot. It is
 using a combination of spec_estimation.py and spec_estimation_yr.py.
 The output figure is 2 PPSD of different cmap and transparencies.
 
-No class is defined here, only necessary functions are in defs.py file.
+No class is defined here, only necessary functions are in fcts.py file.
 
 Sections :
     . Collect of the data 
@@ -20,9 +20,11 @@ Sections :
         Before : 2 times (2 sets of time/data)
     . Plot of the histograms
     
-PS : For GMW (UW) it's only EHZ for 2011 but there are a lot of traces so 
+NB : For GMW (UW) it's only EHZ for 2011 but there are a lot of traces so 
 stream.merge() for all
-    
+
+Last time checked on Wed Dec 28
+
 """
 
 """
@@ -56,9 +58,9 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2011,1,1)
+date = date_n(2011,5,1)
 day = date.timetuple().tm_yday 
-num = 365 #8 = 1 semaine
+num = 61 #8 = 1 semaine
 
 # Temporary variables
 temp_time=[]
@@ -66,7 +68,7 @@ temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
 # Nom du fichier
-sta = 'B018'
+sta = 'B023'
 net = 'PB'
 yr  = '2011'
 
@@ -115,7 +117,7 @@ for iday in np.arange(day,day+num,dtype=int):
     stream = read(filename,starttime=starttime,endtime=endtime)
     trace  = stream[2] #Composante Z    
     
-    print(trace)
+    print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
     
     iid = "%(network)s.%(station)s.%(location)s.%(channel)s" % stats
     
@@ -258,20 +260,6 @@ for iday in np.arange(day,day+num,dtype=int):
             temp_binned_psds[iday-1] = binned_psds
             
     temp_time=np.append(temp_time,times_processed)
-    
-    # Suivi du temps
-    if iday==50:
-        print('50e jour')
-    elif iday==100:
-        print('100e jour')
-    elif iday==150:
-        print('150e jour')
-    elif iday==200:
-        print('200e jour')
-    elif iday==250:
-        print('250e jour')
-    elif iday==300:
-        print('300e jour')
     
     # Init
     if changed:

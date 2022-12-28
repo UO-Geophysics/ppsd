@@ -23,13 +23,12 @@ Sections :
     . Calculation of the 2D-histogram
     . Plot of the histogram
     
-PS : other parameters/lines of code are available in trash.py (all related
-to the plot part)
+PS : other parameters/lines of code are available in trash.py
 PSS : the original script of the PPSD class of the module can be found at
 /opt/anaconda3/lib/python3.9/site-packages/obspy/signal/spectral_estimation.py
 
+Last time checked on Wed Dec 28
 """
-
 
 """
     Importation of the necessary librairies to execute the code and also,
@@ -116,7 +115,7 @@ for iday in np.arange(day,day+num,dtype=int):
     stream = read(filename,starttime=starttime,endtime=endtime)
     trace  = stream[2] #Composante Z 
     
-    print(trace)
+    print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
     
     iid = "%(network)s.%(station)s.%(location)s.%(channel)s" % stats
     

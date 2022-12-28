@@ -2,9 +2,16 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Nov 28 14:36:51 2022
+Update  on Mon Dec 28 
 
 @author: loispapin
 """
+
+#################
+
+cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["white","black"])
+
+#################
 
 it=0;
 for traceZ in stream:
@@ -14,6 +21,8 @@ for traceZ in stream:
     if ch == 'EHZ':
         trace+=traceZ
         print(traceZ)
+
+#################
 
 # Explications bins : inds 1 et inds 2
 
@@ -30,6 +39,8 @@ for traceZ in stream:
 #   - (len(self.db_bin_edges)-1) means above top bin
 # values that are left of first bin edge have to be moved back into the
 # binning
+
+#################
 
 # Ligne 263
 
