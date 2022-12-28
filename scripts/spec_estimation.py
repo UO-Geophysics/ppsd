@@ -76,7 +76,7 @@ elif len(day) == 2:
     day = ('0' + day)
     
 path = "/Users/loispapin/Documents/Work/PNSN/"
-filename = (path + yr + '/Data' + sta + '/' + sta 
+filename = (path + yr + '/Data/' + sta + '/' + sta 
             + '.' + net + '.' + yr + '.' + day)
 
 segm = 3600 #1h cut
