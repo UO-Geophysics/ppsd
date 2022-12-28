@@ -70,7 +70,7 @@ starts=[];ends=[] #Every start and end of times
 # Nom du fichier
 sta = 'B023'
 net = 'PB'
-yr  = '2011'
+yr  = str(date.timetuple().tm_year)
 
 for iday in np.arange(day,day+num,dtype=int):
     
