@@ -85,8 +85,9 @@ for iday in np.arange(day,day+num,dtype=int):
     elif len(str(iday)) == 3:
         day = (str(iday))
     
-    path = "/Users/loispapin/Documents/Work/PNSN/2011/Data/"
-    filename = (path + sta + '/' + sta + '.' + net + '.' + yr + '.' + day)
+    path = "/Users/loispapin/Documents/Work/PNSN/"
+    filename = (path + yr + '/Data' + sta + '/' + sta 
+                + '.' + net + '.' + yr + '.' + day)
         
     segm = 3600 #1h cut
     
