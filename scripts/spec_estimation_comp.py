@@ -49,8 +49,8 @@ from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
 # Functions called in this script
-runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py', 
-        wdir='/Users/loispapin/Documents/Work/PNSN/2011')
+runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
+        wdir='/Users/loispapin/Documents/Work/PNSN')
 
 """
     Start of the script with time to choose : the period of time that we want 
@@ -58,9 +58,9 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2011,5,1)
+date = date_n(2015,12,9)
 day = date.timetuple().tm_yday 
-num = 61 #8 = 1 semaine
+num = 23 #8 = 1 semaine
 
 # Temporary variables
 temp_time=[]
@@ -68,7 +68,7 @@ temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
 # Nom du fichier
-sta = 'B023'
+sta = 'B926'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
 
@@ -141,24 +141,17 @@ for iday in np.arange(day,day+num,dtype=int):
     period_step_octaves            = 0.125
     db_bins                        = (-170, -100, 0.5)
     
-    ##13 segments overlapping 75% and truncate to next lower power of 2
-    #number of points
+    # FFT calculations
     nfft=ppsd_length*sampling_rate 
-    #1 full segment length + 25% * 12 full segment lengths
     nfft=nfft/4.0                  
-    #next smaller power of 2 for nfft
     nfft=prev_pow_2(nfft)          
-    #use 75% overlap
     nlap=int(0.75*nfft)            
-    #trace length for one psd segment
     leng=int(sampling_rate*ppsd_length)
-    #make an initial dummy psd and to get the array of periods
     _,freq=mlab.psd(np.ones(leng),nfft,sampling_rate,noverlap=nlap) 
-    #leave out first adn last entry (offset)
     freq=freq[1:]
     psd_periods=1.0/freq[::-1]
     
-    # Calculation on 0.01-16Hz
+    # Computation on 0.01-16Hz
     f1 = 1; f2 = 10; 
     period_limits = (1/f2,1/f1)
     
@@ -306,27 +299,17 @@ num_db_bins = len(db_bin_centers)
 # initial setup of 2D histogram
 hist_stack = np.zeros((num_period_bins,num_db_bins),dtype=np.uint64)
 
-# empty selection, set all histogram stacks to zeros
 if not used_count:
     current_hist_stack = hist_stack
     current_hist_stack_cumulative = np.zeros_like(hist_stack,dtype=np.float32)
     current_times_used = used_times
 
-# concatenate all used spectra, evaluate index of amplitude bin each
-# value belongs to
 inds = np.hstack([binned_psds[i] for i in used_indices])
-
-# we need minus one because searchsorted returns the insertion index in
-# the array of bin edges which is the index of the corresponding bin
-# plus one
 inds = db_bin_edges.searchsorted(inds, side="left") - 1
 inds[inds == -1] = 0
-# same goes for values right of last bin edge
 inds[inds == num_db_bins] -= 1
-# reshape such that we can iterate over the array, extracting for
-# each period bin an array of all amplitude bins we have hit
 inds = inds.reshape((used_count, num_period_bins)).T
-# inds=inds[:,0]
+
 for i, inds_ in enumerate(inds):
     # count how often each bin has been hit for this period bin,
     # set the current 2D histogram column accordingly
@@ -357,9 +340,7 @@ xedges = 1.0 / xedges
 """
 
 # Day of data to compare
-date = date_n(2011,6,29) #lot of events (south)
-# date = date_n(2011,7,14) #no events
-# date = date_n(2011,8,5) #lot of events (north)
+date = date_n(2016,1,13) 
 
 # Nom du fichier
 yr  = str(date.timetuple().tm_year)
@@ -369,8 +350,9 @@ if len(day) == 1:
 elif len(day) == 2:
     day = ('0' + day)
     
-path = "/Users/loispapin/Documents/Work/PNSN/2011/Data/"
-filename = (path + sta + '/' + sta + '.' + net + '.' + yr + '.' + day)
+path = "/Users/loispapin/Documents/Work/PNSN/"
+filename = (path + yr + '/Data/' + sta + '/' + sta 
+            + '.' + net + '.' + yr + '.' + day)
 
 # 1 day 
 stream = read(filename)
@@ -402,20 +384,12 @@ metadata = client.get_stations(network=network,station=station,
     
 """
 
-##13 segments overlapping 75% and truncate to next lower power of 2
-#number of points
 nfft=ppsd_length*sampling_rate 
-#1 full segment length + 25% * 12 full segment lengths
 nfft=nfft/4.0                  
-#next smaller power of 2 for nfft
 nfft=prev_pow_2(nfft)          
-#use 75% overlap
 nlap=int(0.75*nfft)            
-#trace length for one psd segment
 leng=int(sampling_rate*ppsd_length)
-#make an initial dummy psd and to get the array of periods
 _,freq=mlab.psd(np.ones(leng),nfft,sampling_rate,noverlap=nlap) 
-#leave out first adn last entry (offset)
 freq=freq[1:]
 psd_periods=1.0/freq[::-1]
 
@@ -548,27 +522,18 @@ num_db_bins = len(db_bin_centers)
 # initial setup of 2D histogram
 hist_stack = np.zeros((num_period_bins,num_db_bins),dtype=np.uint64)
 
-# empty selection, set all histogram stacks to zeros
 if not used_count:
     current_hist_stack = hist_stack
     current_hist_stack_cumulative = np.zeros_like(hist_stack,dtype=np.float32)
     current_times_used = used_times
 
-# concatenate all used spectra, evaluate index of amplitude bin each
-# value belongs to
-inds = np.hstack([binned_psds[i] for i in used_indices])
 
-# we need minus one because searchsorted returns the insertion index in
-# the array of bin edges which is the index of the corresponding bin
-# plus one
+inds = np.hstack([binned_psds[i] for i in used_indices])
 inds = db_bin_edges.searchsorted(inds, side="left") - 1
 inds[inds == -1] = 0
-# same goes for values right of last bin edge
 inds[inds == num_db_bins] -= 1
-# reshape such that we can iterate over the array, extracting for
-# each period bin an array of all amplitude bins we have hit
 inds = inds.reshape((used_count, num_period_bins)).T
-# inds=inds[:,0]
+
 for i, inds_ in enumerate(inds):
     # count how often each bin has been hit for this period bin,
     # set the current 2D histogram column accordingly
@@ -606,7 +571,7 @@ xedges = 1.0 / xedges
 
 # Initialisation of the parameters
 grid=True
-max_percentage=15
+max_percentage=20
 color_limits = (0, max_percentage)
 label = "[%]"
 period_lim=(f1,f2) 
