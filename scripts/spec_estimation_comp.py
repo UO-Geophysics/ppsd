@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Dec 12 10:44:29 2022
-Update  on Mon Dec 20 
+Update  on Tue Jan 03
 
 @author: loispapin
 
@@ -23,7 +23,7 @@ Sections :
 NB : For GMW (UW) it's only EHZ for 2011 but there are a lot of traces so 
 stream.merge() for all
 
-Last time checked on Wed Dec 28
+Last time checked on Tue Jan 03 
 
 """
 
@@ -58,9 +58,9 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2015,12,9)
+date = date_n(2015,12,19)
 day = date.timetuple().tm_yday 
-num = 23 #8 = 1 semaine
+num = 13 #8 = 1 semaine
 
 # Temporary variables
 temp_time=[]
@@ -71,6 +71,18 @@ starts=[];ends=[] #Every start and end of times
 sta = 'B926'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
+
+# Parameters 
+segm         = 3600 #1h cut
+ppsd_length  = segm 
+overlap                        = 0.5
+period_smoothing_width_octaves = 1.0
+period_step_octaves            = 0.125
+db_bins                        = (-170, -100, 0.5)
+    
+# Computation on 1-10Hz
+f1 = 1; f2 = 10; 
+period_limits = (1/f2,1/f1)
 
 for iday in np.arange(day,day+num,dtype=int):
     
@@ -90,8 +102,6 @@ for iday in np.arange(day,day+num,dtype=int):
     path = "/Users/loispapin/Documents/Work/PNSN/"
     filename = (path + yr + '/Data/' + sta + '/' + sta 
                 + '.' + net + '.' + yr + '.' + day)
-        
-    segm = 3600 #1h cut
     
     # 1 day
     stream = read(filename)
@@ -135,12 +145,6 @@ for iday in np.arange(day,day+num,dtype=int):
         
     """
     
-    ppsd_length                    = segm 
-    overlap                        = 0.5
-    period_smoothing_width_octaves = 1.0
-    period_step_octaves            = 0.125
-    db_bins                        = (-170, -100, 0.5)
-    
     # FFT calculations
     nfft=ppsd_length*sampling_rate 
     nfft=nfft/4.0                  
@@ -151,17 +155,12 @@ for iday in np.arange(day,day+num,dtype=int):
     freq=freq[1:]
     psd_periods=1.0/freq[::-1]
     
-    # Computation on 0.01-16Hz
-    f1 = 1; f2 = 10; 
-    period_limits = (1/f2,1/f1)
-    
+    # Bin calculations
     period_binning = setup_period_binning(psd_periods,
                                           period_smoothing_width_octaves,
                                           period_step_octaves,period_limits)
-    
     period_xedges = np.concatenate([period_binning[1,0:1],
                                     period_binning[3,:]])
-    
     period_bin_left_edges  = period_binning[0,:]
     period_bin_centers     = period_binning[2,:]
     period_bin_right_edges = period_binning[4,:]
@@ -340,7 +339,7 @@ xedges = 1.0 / xedges
 """
 
 # Day of data to compare
-date = date_n(2016,1,13) 
+date = date_n(2015,12,26) 
 
 # Nom du fichier
 yr  = str(date.timetuple().tm_year)
@@ -384,6 +383,7 @@ metadata = client.get_stations(network=network,station=station,
     
 """
 
+# FFT calculations
 nfft=ppsd_length*sampling_rate 
 nfft=nfft/4.0                  
 nfft=prev_pow_2(nfft)          
@@ -393,13 +393,12 @@ _,freq=mlab.psd(np.ones(leng),nfft,sampling_rate,noverlap=nlap)
 freq=freq[1:]
 psd_periods=1.0/freq[::-1]
 
+# Bin calculations
 period_binning = setup_period_binning(psd_periods,
                                       period_smoothing_width_octaves,
                                       period_step_octaves,period_limits)
-
 period_xedges = np.concatenate([period_binning[1,0:1],
                                 period_binning[3,:]])
-
 period_bin_left_edges  = period_binning[0,:]
 period_bin_centers     = period_binning[2,:]
 period_bin_right_edges = period_binning[4,:]
