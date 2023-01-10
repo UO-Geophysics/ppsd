@@ -24,10 +24,10 @@ from matplotlib import cm
 from matplotlib.colors import ListedColormap,LinearSegmentedColormap
 
 # Functions called in this script #Mac & Windows
-# runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
-#         wdir='/Users/loispapin/Documents/Work/PNSN')
-runfile('C:/Users/papin/Documents/Spec/fcts.py', 
-        wdir='C:/Users/papin/Documents/Spec')
+runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
+        wdir='/Users/loispapin/Documents/Work/PNSN')
+# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
+#         wdir='C:/Users/papin/Documents/Spec')
 
 ######################################################################
 #                               DATA                                 #
@@ -40,7 +40,7 @@ day1 = day
 num  = 365 #8 = 1 semaine
 
 # Nom du fichier
-sta = 'B006'
+sta = 'B926'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
 
@@ -79,14 +79,14 @@ for iday in np.arange(day,day+num,dtype=int):
     elif len(str(iday)) == 3:
         day = (str(iday))
 
-    # #Mac
-    # path = "/Users/loispapin/Documents/Work/PNSN/"
-    # filename = (path + yr + '/Data/' + sta + '/' + sta 
-    #             + '.' + net + '.' + yr + '.' + day)
+    # Mac
+    path = "/Users/loispapin/Documents/Work/PNSN/"
+    filename = (path + yr + '/Data/' + sta + '/' + sta 
+                + '.' + net + '.' + yr + '.' + day)
 
-    # Windows
-    path = r"C:\Users\papin\Documents\Spec\Data"
-    filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
+    # # Windows
+    # path = r"C:\Users\papin\Documents\Spec\Data"
+    # filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
     
     # 1 day 
     stream = read(filename)
@@ -710,7 +710,7 @@ for k in np.linspace(0,265,266):
     curve5[int(k)] =np.percentile(newcurves[int(k)], 5)
     curve95[int(k)]=np.percentile(newcurves[int(k)],95)
 
-plt.plot(x,curve5,'b',x,curve95,'b')
+plt.plot(x,curve5,'k',x,curve95,'k')
 
 ######################################################################
 
@@ -725,14 +725,14 @@ if len(day) == 1:
 elif len(day) == 2:
     day = ('0' + day)
 
-# #Mac
-# path = "/Users/loispapin/Documents/Work/PNSN/"
-# filename = (path + yr + '/Data/' + sta + '/' + sta 
-#             + '.' + net + '.' + yr + '.' + day)
+#Mac
+path = "/Users/loispapin/Documents/Work/PNSN/"
+filename = (path + yr + '/Data/' + sta + '/' + sta 
+            + '.' + net + '.' + yr + '.' + day)
 
-# Windows
-path = r"C:\Users\papin\Documents\Spec\Data"
-filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
+# # Windows
+# path = r"C:\Users\papin\Documents\Spec\Data"
+# filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
 
 # 1 day 
 stream = read(filename)
@@ -895,7 +895,7 @@ if len(day) == 1:
 elif len(day) == 2:
     day = ('0' + day)
 
-#Mac
+# Mac
 path = "/Users/loispapin/Documents/Work/PNSN/"
 filename = (path + yr + '/Data/' + sta + '/' + sta 
             + '.' + net + '.' + yr + '.' + day)
@@ -1235,14 +1235,14 @@ if len(day) == 1:
 elif len(day) == 2:
     day = ('0' + day)
 
-# #Mac
-# path = "/Users/loispapin/Documents/Work/PNSN/"
-# filename = (path + yr + '/Data/' + sta + '/' + sta 
+#Mac
+path = "/Users/loispapin/Documents/Work/PNSN/"
+filename = (path + yr + '/Data/' + sta + '/' + sta 
             + '.' + net + '.' + yr + '.' + day)
 
-# Windows
-path = r"C:\Users\papin\Documents\Spec\Data"
-filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
+# # Windows
+# path = r"C:\Users\papin\Documents\Spec\Data"
+# filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
 
 # 1 day 
 stream = read(filename)
@@ -1396,7 +1396,7 @@ curve4c=np.flip(curve)
 
 ###################################
 
-plt.plot(x,curve1c,'r',x,curve2c,'r',x,curve3c,'r',x,curve4c,'r')    
+plt.plot(x,curve1c,'--r',x,curve2c,'--r',x,curve3c,'--r',x,curve4c,'--r',lw=1)    
 
 # Grid
 color = {"color": "0.7"}
