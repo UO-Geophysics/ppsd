@@ -40,7 +40,7 @@ day1 = day
 num  = 365 #8 = 1 semaine
 
 # Nom du fichier
-sta = 'B926'
+sta = 'B006'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
 
@@ -1413,10 +1413,11 @@ ax.xaxis.set_major_formatter(FormatStrFormatter("%g")) #Pas de 10^
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
-title = "%s   %s--%s   (from %s to %s pm)"
+title = "%s   %s--%s (from %s to %s pm) \n day to compare : %s "
 title = title % (iid,beg.date,(stp-1).date,
                   np.abs(beg.datetime.hour-12),
-                  np.abs(stp.datetime.hour-12))
+                  np.abs(stp.datetime.hour-12),
+                  date)
 ax.set_title(title)
 
 # Show the figure
