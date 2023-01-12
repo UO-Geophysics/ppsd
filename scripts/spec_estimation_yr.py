@@ -3,7 +3,7 @@
 """
 Created on Thu Dec  1 10:23:16 2022
 Working on Mon Dec  2 17:05:48 2022
-Update  on Mon Dec 20 
+Update  on Thu Jan 12
 
 @author: loispapin
 
@@ -27,7 +27,7 @@ PS : other parameters/lines of code are available in trash.py
 PSS : the original script of the PPSD class of the module can be found at
 /opt/anaconda3/lib/python3.9/site-packages/obspy/signal/spectral_estimation.py
 
-Last time checked on Wed Dec 28
+Last time checked on Thu Jan 12
 """
 
 """
@@ -46,14 +46,14 @@ from matplotlib.ticker import FormatStrFormatter
 
 from obspy import read
 from obspy import Stream, Trace, UTCDateTime
-from obspy.imaging.cm import obspy_sequential, pqlx 
+from obspy.imaging.cm import obspy_sequential
 from obspy.signal.util import prev_pow_2
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
 # Functions called in this script
-runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py', 
-        wdir='/Users/loispapin/Documents/Work/PNSN/2011')
+runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
+        wdir='/Users/loispapin/Documents/Work/PNSN')
 
 """
     Read the data with the function read of the Obspy module. Identify the 
@@ -62,9 +62,9 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2011,1,1)
+date = date_n(2015,12,16)
 day = date.timetuple().tm_yday 
-num = 365 #8 = 1 semaine
+num = 15 #8 = 1 semaine
 
 # Temporary variables
 temp_time=[]
@@ -72,9 +72,21 @@ temp_binned_psds=[None]*365
 starts=[];ends=[] #Every start and end of times
 
 # Nom du fichier
-sta = 'B018'
+sta = 'B926'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
+
+# Parameters 
+segm         = 3600 #1h cut
+ppsd_length  = segm 
+overlap                        = 0.5
+period_smoothing_width_octaves = 1.0
+period_step_octaves            = 0.125
+db_bins                        = (-170, -90, 0.5)
+
+# Computation on 1-10Hz
+f1 = 1; f2 = 10; 
+period_limits = (1/f2,1/f1)
 
 for iday in np.arange(day,day+num,dtype=int):
 
@@ -85,22 +97,19 @@ for iday in np.arange(day,day+num,dtype=int):
     elif len(str(iday)) == 3:
         day = (str(iday))
     
+    # Mac
     path = "/Users/loispapin/Documents/Work/PNSN/"
     filename = (path + yr + '/Data/' + sta + '/' + sta 
                 + '.' + net + '.' + yr + '.' + day)
-        
-    segm = 3600 #1h cut
+    
+    # # Windows
+    # path = r"C:\Users\papin\Documents\Spec\Data"
+    # filename = (path + "\\" + sta + "\\" + sta + '.' 
+    #             + net + '.' + yr + '.' + day)
     
     # 1 day
     stream = read(filename)
     trace = stream[2]
-    
-    # # Condition for some station ### need to be improve
-    # if len(stream)>1:
-    #     stream.merge()
-    #     trace = stream[0]
-    # else:
-    #     trace = stream[0]
     
     stats         = trace.stats
     network       = trace.stats.network
@@ -111,7 +120,7 @@ for iday in np.arange(day,day+num,dtype=int):
     sampling_rate = trace.stats.sampling_rate
     
     # Cut of the data on choosen times
-    starttime = starttime+(3600*2.5)
+    starttime = starttime+(3600*23)
     endtime   = starttime+segm
     stream = read(filename,starttime=starttime,endtime=endtime)
     trace  = stream[2] #Composante Z 
@@ -132,41 +141,23 @@ for iday in np.arange(day,day+num,dtype=int):
         the def __init__ in the PPSD class.
         
     """
-    
-    ppsd_length                    = segm 
-    overlap                        = 0.5
-    period_smoothing_width_octaves = 1.0
-    period_step_octaves            = 0.125
-    db_bins                        = (-170, -100, 0.5)
-    
-    ##13 segments overlapping 75% and truncate to next lower power of 2
-    #number of points
+
+    # FFT calculations
     nfft=ppsd_length*sampling_rate 
-    #1 full segment length + 25% * 12 full segment lengths
     nfft=nfft/4.0                  
-    #next smaller power of 2 for nfft
     nfft=prev_pow_2(nfft)          
-    #use 75% overlap
     nlap=int(0.75*nfft)            
-    #trace length for one psd segment
     leng=int(sampling_rate*ppsd_length)
-    #make an initial dummy psd and to get the array of periods
     _,freq=mlab.psd(np.ones(leng),nfft,sampling_rate,noverlap=nlap) 
-    #leave out first adn last entry (offset)
     freq=freq[1:]
     psd_periods=1.0/freq[::-1]
     
-    # Calculation on 0.01-16Hz
-    f1 = 1; f2 = 10; 
-    period_limits = (1/f2,1/f1)
-    
+    # Bin calculations
     period_binning = setup_period_binning(psd_periods,
                                           period_smoothing_width_octaves,
                                           period_step_octaves,period_limits)
-    
     period_xedges = np.concatenate([period_binning[1,0:1],
                                     period_binning[3,:]])
-    
     period_bin_left_edges  = period_binning[0,:]
     period_bin_centers     = period_binning[2,:]
     period_bin_right_edges = period_binning[4,:]
@@ -192,21 +183,15 @@ for iday in np.arange(day,day+num,dtype=int):
         
     """
     
-    # Init
-    verbose     = False #Show the time data computed
-    skip_on_gaps= False
-    
     # Verifications before the computations
     if metadata is None:
-        msg = ("PPSD instance has no metadata attached, which are needed "
-               "for processing the data. When using 'PPSD.load_npz()' use "
-               "'metadata' kwarg to provide metadata.")
+        msg = ("PPSD instance has no metadata attached.")
         raise Exception(msg)
     changed = False
     if isinstance(stream, Trace):
         stream = Stream([stream])
     if not stream:
-        msg = 'Empty stream object provided to PPSD.add()'
+        msg = 'Empty stream object provided'
         warnings.warn(msg)
     stream = stream.select(id=iid)
     if not stream:
@@ -222,6 +207,7 @@ for iday in np.arange(day,day+num,dtype=int):
     times_data = insert_data_times(times_data,stream)
     times_gaps = insert_gap_times (times_gaps,stream)
     # merge depending on skip_on_gaps
+    skip_on_gaps= False
     stream.merge(merge_method(skip_on_gaps),fill_value=0)
     
     # Read the all stream by the defined segments
@@ -247,25 +233,15 @@ for iday in np.arange(day,day+num,dtype=int):
             else:
                 slice = trace.slice(t1, t1 + ppsd_length -
                                     trace.stats.delta)
+                # print(slice)
                 success = process(leng,nfft,sampling_rate,nlap,psd_periods,
                                   period_bin_left_edges,period_bin_right_edges,
                                   times_processed,binned_psds,
                                   metadata,iid,trace=slice)
-                if success:
-                    if verbose:
-                        print(t1)
-                    changed = True
             t1 += (1 - overlap) * ppsd_length  # advance
             temp_binned_psds[iday-1] = binned_psds
             
     temp_time=np.append(temp_time,times_processed)
-    
-    # Init
-    if changed:
-        current_hist_stack            = None
-        current_hist_stack_cumulative = None
-        current_times_used            = [] 
-        current_times_all_details     = []
 
 # All days are include in the variables for the histogram
 times_processed=temp_time.tolist()
@@ -307,21 +283,12 @@ if not used_count:
     current_hist_stack_cumulative = np.zeros_like(hist_stack,dtype=np.float32)
     current_times_used = used_times
 
-# concatenate all used spectra, evaluate index of amplitude bin each
-# value belongs to
 inds = np.hstack([binned_psds[i] for i in used_indices])
-
-# we need minus one because searchsorted returns the insertion index in
-# the array of bin edges which is the index of the corresponding bin
-# plus one
 inds = db_bin_edges.searchsorted(inds, side="left") - 1
 inds[inds == -1] = 0
-# same goes for values right of last bin edge
 inds[inds == num_db_bins] -= 1
-# reshape such that we can iterate over the array, extracting for
-# each period bin an array of all amplitude bins we have hit
 inds = inds.reshape((used_count, num_period_bins)).T
-# inds=inds[:,0]
+
 for i, inds_ in enumerate(inds):
     # count how often each bin has been hit for this period bin,
     # set the current 2D histogram column accordingly
@@ -331,6 +298,17 @@ for i, inds_ in enumerate(inds):
 current_hist_stack = hist_stack
 # current_hist_stack_cumulative = hist_stack_cumul
 current_times_used = used_times
+
+if current_hist_stack is None:
+    msg = 'No data accumulated'
+    raise Exception(msg)
+
+# Computations needed
+current_histogram = current_hist_stack
+current_histogram_count = len(current_times_used)
+data = (current_histogram * 100.0 / (current_histogram_count or 1))
+xedges = period_xedges
+xedges = 1.0 / xedges
 
 """
     Plot of the 2D-histogram with all the parameters. Without modification,
@@ -345,10 +323,6 @@ current_times_used = used_times
     
 """
 
-if current_hist_stack is None:
-    msg = 'No data accumulated'
-    raise Exception(msg)
-
 # Initialisation of the parameters
 grid=True
 max_percentage=15
@@ -356,23 +330,6 @@ color_limits = (0, max_percentage)
 label = "[%]"
 period_lim=(f1,f2) 
 xaxis_frequency=True #False
-cmap = pqlx
-# color=int(input('Choose of the colormap (1 is obspy, 2 is McNamara) : '))
-# if color==1:
-#     cmap = obspy_sequential
-# elif color==2:
-#     cmap = pqlx #McNamara color map (white background, rainbow color)
-# else: 
-#     msg = "Error on the choosen number for the colormap"
-#     warnings.warn(msg)
-#     cmap = obspy_sequential
-
-# Computations needed
-current_histogram = current_hist_stack
-current_histogram_count = len(current_times_used)
-data = (current_histogram * 100.0 / (current_histogram_count or 1))
-xedges = period_xedges
-xedges = 1.0 / xedges
 
 # Start of the figure
 plt.ioff()
@@ -385,13 +342,12 @@ fig.max_percentage = max_percentage
 fig.grid = grid
 fig.xaxis_frequency = xaxis_frequency
 fig.color_limits = color_limits
-fig.cmap=cmap
 
 xlim = ax.get_xlim()
 fig.meshgrid = np.meshgrid(xedges,db_bin_edges)
 # PPSD
 ppsd=ax.pcolormesh(fig.meshgrid[0], fig.meshgrid[1], 
-                      data.T, cmap=fig.cmap, zorder=2, alpha=1)
+                      data.T, cmap=obspy_sequential, zorder=2, alpha=1)
 
 # Colorbar
 cb = plt.colorbar(ppsd,ax=ax)
@@ -400,7 +356,8 @@ cb.set_label(fig.label)
 fig.colorbar = cb
 ppsd.set_clim(*fig.color_limits)
 
-# Grid (doesn't work)
+# Grid 
+### doesn't work, why ?
 color = {"color": "0.7"}
 ax.grid(True, which="major", **color)
 ax.grid(True, which="minor", **color)

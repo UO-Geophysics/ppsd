@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Dec 12 10:44:29 2022
-Update  on Tue Jan 03
+Update  on Thu Jan 12
 
 @author: loispapin
 
@@ -23,8 +23,7 @@ Sections :
 NB : For GMW (UW) it's only EHZ for 2011 but there are a lot of traces so 
 stream.merge() for all
 
-Last time checked on Tue Jan 03 
-
+Last time checked on Thu Jan 12
 """
 
 """
@@ -48,9 +47,11 @@ from obspy.signal.util import prev_pow_2
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
-# Functions called in this script
+# Functions called in this script #Mac & Windows
 runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
         wdir='/Users/loispapin/Documents/Work/PNSN')
+# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
+#         wdir='C:/Users/papin/Documents/Spec')
 
 """
     Start of the script with time to choose : the period of time that we want 
@@ -58,9 +59,9 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2015,12,19)
+date = date_n(2015,12,16)
 day = date.timetuple().tm_yday 
-num = 13 #8 = 1 semaine
+num = 15 #8 = 1 semaine
 
 # Temporary variables
 temp_time=[]
@@ -78,7 +79,7 @@ ppsd_length  = segm
 overlap                        = 0.5
 period_smoothing_width_octaves = 1.0
 period_step_octaves            = 0.125
-db_bins                        = (-170, -100, 0.5)
+db_bins                        = (-170, -90, 0.5)
     
 # Computation on 1-10Hz
 f1 = 1; f2 = 10; 
@@ -99,20 +100,19 @@ for iday in np.arange(day,day+num,dtype=int):
     elif len(str(iday)) == 3:
         day = (str(iday))
     
+    # Mac
     path = "/Users/loispapin/Documents/Work/PNSN/"
     filename = (path + yr + '/Data/' + sta + '/' + sta 
                 + '.' + net + '.' + yr + '.' + day)
     
+    # # Windows
+    # path = r"C:\Users\papin\Documents\Spec\Data"
+    # filename = (path + "\\" + sta + "\\" + sta + '.' 
+    #             + net + '.' + yr + '.' + day)
+    
     # 1 day
     stream = read(filename)
     trace = stream[2]
-    
-    # # Condition for some station ### need to be improve
-    # if len(stream)>1:
-    #     stream.merge()
-    #     trace = stream[0]
-    # else:
-    #     trace = stream[0]
     
     stats         = trace.stats
     network       = trace.stats.network
@@ -123,10 +123,10 @@ for iday in np.arange(day,day+num,dtype=int):
     sampling_rate = trace.stats.sampling_rate
     
     # Cut of the data on choosen times
-    starttime = starttime+(3600*2.5)
+    starttime = starttime+(3600*23)
     endtime   = starttime+segm
     stream = read(filename,starttime=starttime,endtime=endtime)
-    trace  = stream[2] #Composante Z    
+    trace  = stream[2] #Composante Z 
     
     print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
     
@@ -186,21 +186,15 @@ for iday in np.arange(day,day+num,dtype=int):
         
     """
     
-    # Init
-    verbose     = False #Show the time data computed
-    skip_on_gaps= False
-    
     # Verifications before the computations
     if metadata is None:
-        msg = ("PPSD instance has no metadata attached, which are needed "
-               "for processing the data. When using 'PPSD.load_npz()' use "
-               "'metadata' kwarg to provide metadata.")
+        msg = ("PPSD instance has no metadata attached.")
         raise Exception(msg)
     changed = False
     if isinstance(stream, Trace):
         stream = Stream([stream])
     if not stream:
-        msg = 'Empty stream object provided to PPSD.add()'
+        msg = 'Empty stream object provided.'
         warnings.warn(msg)
     stream = stream.select(id=iid)
     if not stream:
@@ -216,6 +210,7 @@ for iday in np.arange(day,day+num,dtype=int):
     times_data = insert_data_times(times_data,stream)
     times_gaps = insert_gap_times (times_gaps,stream)
     # merge depending on skip_on_gaps
+    skip_on_gaps= False
     stream.merge(merge_method(skip_on_gaps),fill_value=0)
     
     # Read the all stream by the defined segments
@@ -245,21 +240,10 @@ for iday in np.arange(day,day+num,dtype=int):
                                   period_bin_left_edges,period_bin_right_edges,
                                   times_processed,binned_psds,
                                   metadata,iid,trace=slice)
-                if success:
-                    if verbose:
-                        print(t1)
-                    changed = True
             t1 += (1 - overlap) * ppsd_length  # advance
             temp_binned_psds[iday-1] = binned_psds
             
     temp_time=np.append(temp_time,times_processed)
-    
-    # Init
-    if changed:
-        current_hist_stack            = None
-        current_hist_stack_cumulative = None
-        current_times_used            = [] 
-        current_times_all_details     = []
 
 # All days are include in the variables for the histogram
 times_processed=temp_time.tolist()
@@ -289,6 +273,7 @@ used_indices = selected.nonzero()[0]
 used_count   = len(used_indices)
 used_times   = np.array(times_processed)[used_indices]
 
+# For title
 day1=UTCDateTime(ns=int(times_processed[0])).date
 day2=UTCDateTime(ns=int(times_processed[-1])).date
 
@@ -339,7 +324,7 @@ xedges = 1.0 / xedges
 """
 
 # Day of data to compare
-date = date_n(2015,12,26) 
+date = date_n(2015,12,18) 
 
 # Nom du fichier
 yr  = str(date.timetuple().tm_year)
@@ -349,16 +334,22 @@ if len(day) == 1:
 elif len(day) == 2:
     day = ('0' + day)
     
+# Mac
 path = "/Users/loispapin/Documents/Work/PNSN/"
 filename = (path + yr + '/Data/' + sta + '/' + sta 
             + '.' + net + '.' + yr + '.' + day)
+
+# # Windows
+# path = r"C:\Users\papin\Documents\Spec\Data"
+# filename = (path + "\\" + sta + "\\" + sta + '.' 
+#             + net + '.' + yr + '.' + day)
 
 # 1 day 
 stream = read(filename)
 trace  = stream[2] #Composante Z
 
 # Cut of the data on choosen times
-starttime = UTCDateTime(date)+(3600*2.5) #2h30
+starttime = UTCDateTime(date)+(3600*23) #2h30
 endtime   = starttime+segm
 stream = read(filename,starttime=starttime,endtime=endtime)
 trace  = stream[2] #Composante Z
@@ -424,21 +415,15 @@ current_times_all_details     = []
     
 """
 
-# Initialisation of the parameters
-verbose     = False #Show the time data computed
-skip_on_gaps= False
-
 # Verifications before the computations
 if metadata is None:
-    msg = ("PPSD instance has no metadata attached, which are needed "
-           "for processing the data. When using 'PPSD.load_npz()' use "
-           "'metadata' kwarg to provide metadata.")
+    msg = ("PPSD instance has no metadata attached.")
     raise Exception(msg)
 changed = False
 if isinstance(stream, Trace):
     stream = Stream([stream])
 if not stream:
-    msg = 'Empty stream object provided to PPSD.add()'
+    msg = 'Empty stream object provided.'
     warnings.warn(msg)
 stream = stream.select(id=iid)
 if not stream:
@@ -454,6 +439,8 @@ if not stream:
 times_data = insert_data_times(times_data,stream)
 times_gaps = insert_gap_times (times_gaps,stream)
 # merge depending on skip_on_gaps
+skip_on_gaps= False
+
 stream.merge(merge_method(skip_on_gaps),fill_value=0)
 
 # Read the all stream by the defined segments
@@ -483,18 +470,7 @@ for trace in stream:
                               period_bin_left_edges,period_bin_right_edges,
                               times_processed,binned_psds,
                               metadata,iid,trace=slice)
-            if success:
-                if verbose:
-                    print(t1)
-                changed = True
         t1 += (1 - overlap) * ppsd_length  # advance
-
-# Init
-if changed:
-    current_hist_stack            = None
-    current_hist_stack_cumulative = None
-    current_times_used            = [] 
-    current_times_all_details     = []
 
 """
     Calculation of the 2D-histogram based on the processed data (time).
@@ -570,7 +546,7 @@ xedges = 1.0 / xedges
 
 # Initialisation of the parameters
 grid=True
-max_percentage=20
+max_percentage=15
 color_limits = (0, max_percentage)
 label = "[%]"
 period_lim=(f1,f2) 
@@ -613,7 +589,7 @@ ax.grid(True, which="minor", **color)
 ### pb de ticks -> need to be named from 1 to 10
 ax.set_xlabel('Frequency [Hz]')
 ax.invert_xaxis()
-ax.set_xscale('log')
+# ax.set_xscale('log')
 ax.set_xlim(period_lim)
 ax.xaxis.set_major_formatter(FormatStrFormatter("%g")) #Pas de 10^
 

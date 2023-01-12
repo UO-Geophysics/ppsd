@@ -3,7 +3,7 @@
 """
 Created on Mon Nov  7 10:03:38 2022
 Working on Mon Nov 28 15:18:23 2022
-Update  on Mon Dec 20 
+Update  on Thu Jan 12
 
 @author: loispapin
 
@@ -27,7 +27,7 @@ PS : other parameters/lines of code are available in trash.py
 PSS : the original script of the PPSD class of the module can be found at
 /opt/anaconda3/lib/python3.9/site-packages/obspy/signal/spectral_estimation.py
 
-Last time checked on Wed Dec 28
+Last time checked on Thu Jan 12
 """
 
 
@@ -47,14 +47,16 @@ from matplotlib.ticker import FormatStrFormatter
 
 from obspy import read
 from obspy import Stream, Trace, UTCDateTime
-from obspy.imaging.cm import obspy_sequential, pqlx 
+from obspy.imaging.cm import obspy_sequential
 from obspy.signal.util import prev_pow_2
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
-# Functions called in this script
-runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py', 
-        wdir='/Users/loispapin/Documents/Work/PNSN/2011')
+# Functions called in this script #Mac & Windows
+runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
+        wdir='/Users/loispapin/Documents/Work/PNSN')
+# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
+#         wdir='C:/Users/papin/Documents/Spec')
 
 """
     Read the data with the function read of the Obspy module. Identify the 
@@ -63,10 +65,10 @@ runfile('/Users/loispapin/Documents/Work/PNSN/2011/fcts.py',
 """
 
 # Day of data
-date = date_n(2011,8,5)
+date = date_n(2015,12,18)
 
 # Nom du fichier
-sta = 'B023'
+sta = 'B926'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
 day = str(date.timetuple().tm_yday)
@@ -74,10 +76,16 @@ if len(day) == 1:
     day = ('00' + day)
 elif len(day) == 2:
     day = ('0' + day)
-    
+
+# Mac
 path = "/Users/loispapin/Documents/Work/PNSN/"
 filename = (path + yr + '/Data/' + sta + '/' + sta 
             + '.' + net + '.' + yr + '.' + day)
+
+# # Windows
+# path = r"C:\Users\papin\Documents\Spec\Data"
+# filename = (path + "\\" + sta + "\\" + sta + '.' 
+#             + net + '.' + yr + '.' + day)
 
 segm = 3600 #1h cut
 
@@ -86,8 +94,8 @@ stream = read(filename)
 trace  = stream[2] #Composante Z
 
 # Cut of the data on choosen times
-starttime = UTCDateTime(date)+(3600*2.5) #2h30
-endtime   = starttime+segm
+starttime = UTCDateTime(date)+(3600*20)
+endtime   = starttime+segm*4
 stream = read(filename,starttime=starttime,endtime=endtime)
 trace  = stream[2] #Composante Z
 
@@ -98,6 +106,8 @@ channel       = trace.stats.channel
 starttime     = trace.stats.starttime
 endtime       = trace.stats.endtime
 sampling_rate = trace.stats.sampling_rate
+
+print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
 
 iid = "%(network)s.%(station)s.%(location)s.%(channel)s" % stats
 
@@ -110,12 +120,12 @@ metadata = client.get_stations(network=network,station=station,
     the def __init__ in the PPSD class.
     
 """
-
+ 
 ppsd_length                    = segm 
-overlap                        = 0.5
+overlap                        = 0
 period_smoothing_width_octaves = 1.0
-period_step_octaves            = 0.125
-db_bins                        = (-170, -100, 0.5)
+period_step_octaves            = 0.0125
+db_bins                        = (-170, -90, 0.5)
 
 ##13 segments overlapping 75% and truncate to next lower power of 2
 #number of points
@@ -132,6 +142,8 @@ leng=int(sampling_rate*ppsd_length)
 _,freq=mlab.psd(np.ones(leng),nfft,sampling_rate,noverlap=nlap) 
 #leave out first adn last entry (offset)
 freq=freq[1:]
+# freq=freq.compress((freq>f1).flat)
+# freq=freq.compress((freq<f2).flat)
 psd_periods=1.0/freq[::-1]
 
 # Calculation on 0.01-16Hz
@@ -170,21 +182,14 @@ current_times_all_details     = []
     
 """
 
-# Initialisation of the parameters
-verbose     = False #Show the time data computed
-skip_on_gaps= False
-
 # Verifications before the computations
 if metadata is None:
-    msg = ("PPSD instance has no metadata attached, which are needed "
-           "for processing the data. When using 'PPSD.load_npz()' use "
-           "'metadata' kwarg to provide metadata.")
+    msg = ("PPSD instance has no metadata attached.")
     raise Exception(msg)
-changed = False
 if isinstance(stream, Trace):
     stream = Stream([stream])
 if not stream:
-    msg = 'Empty stream object provided to PPSD.add()'
+    msg = 'Empty stream object provided.'
     warnings.warn(msg)
 stream = stream.select(id=iid)
 if not stream:
@@ -200,6 +205,7 @@ if not stream:
 times_data = insert_data_times(times_data,stream)
 times_gaps = insert_gap_times (times_gaps,stream)
 # merge depending on skip_on_gaps
+skip_on_gaps= False
 stream.merge(merge_method(skip_on_gaps),fill_value=0)
 
 # Read the all stream by the defined segments
@@ -229,18 +235,7 @@ for trace in stream:
                               period_bin_left_edges,period_bin_right_edges,
                               times_processed,binned_psds,
                               metadata,iid,trace=slice)
-            if success:
-                if verbose:
-                    print(t1)
-                changed = True
         t1 += (1 - overlap) * ppsd_length  # advance
-
-# Init
-if changed:
-    current_hist_stack            = None
-    current_hist_stack_cumulative = None
-    current_times_used            = [] 
-    current_times_all_details     = []
 
 """
     Calculation of the 2D-histogram based on the processed data (time).
@@ -298,6 +293,10 @@ current_hist_stack = hist_stack
 # current_hist_stack_cumulative = hist_stack_cumul
 current_times_used = used_times
 
+if current_hist_stack is None:
+    msg = 'No data accumulated'
+    raise Exception(msg)
+
 """
     Plot of the 2D-histogram with all the parameters. Without modification,
     no limit of frequencies, no noise models, no coverage, colors of PSD
@@ -311,10 +310,6 @@ current_times_used = used_times
     
 """
 
-if current_hist_stack is None:
-    msg = 'No data accumulated'
-    raise Exception(msg)
-
 # Initialisation of the parameters
 grid=True
 max_percentage=15
@@ -322,16 +317,7 @@ color_limits = (0, max_percentage)
 label = "[%]"
 period_lim=(f1,f2) 
 xaxis_frequency=True #False
-
-# color=int(input('Choose of the colormap (1 is obspy, 2 is McNamara) : '))
-# if color==1:
 cmap = obspy_sequential
-# elif color==2:
-#     cmap = pqlx #McNamara color map (white background, rainbow color)
-# else: 
-#     msg = "Error on the choosen number for the colormap"
-#     warnings.warn(msg)
-#     cmap = obspy_sequential
 
 # Computations needed
 current_histogram = current_hist_stack
@@ -382,11 +368,16 @@ ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 # ax.set_ylim(-160,-120)
 
-title = "%s   %s -- %s  (%i/%i segments)"
-title = title % (iid,
-                 UTCDateTime(ns=int(times_processed[0])).date,
-                 UTCDateTime(ns=int(times_processed[-1])).date,
-                 len(current_times_used),len(times_processed))
+# Title : segments or dates
+# title = "%s   %s -- %s  (%i/%i segments)"
+# title = title % (iid,
+#                   UTCDateTime(ns=int(times_processed[0])).date,
+#                   UTCDateTime(ns=int(times_processed[-1])).date,
+#                   len(current_times_used),len(times_processed))
+title = "%s   %s     (from %s to %s)"
+title = title % (iid,starttime.date,
+                  starttime.datetime.hour+1,
+                  endtime.datetime.hour+1)
 ax.set_title(title)
 
 # Show the figure
