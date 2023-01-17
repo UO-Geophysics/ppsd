@@ -30,12 +30,6 @@ PSS : the original script of the PPSD class of the module can be found at
 Last time checked on Thu Jan 12
 """
 
-"""
-    Importation of the necessary librairies to execute the code and also,
-    in case, to execute the functions available in defs.py.
-    
-"""
-
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
@@ -51,9 +45,12 @@ from obspy.signal.util import prev_pow_2
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
-# Functions called in this script
+# Functions called in this script #Mac & Windows
 runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
         wdir='/Users/loispapin/Documents/Work/PNSN')
+# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
+#         wdir='C:/Users/papin/Documents/Spec')
+
 
 """
     Read the data with the function read of the Obspy module. Identify the 
@@ -137,7 +134,7 @@ for iday in np.arange(day,day+num,dtype=int):
     
     """
         Define the PPSD informations such as the segments for the calculations,
-        the frenquencies and periods, the bins for the histogram. Equivalent of
+        the frequencies and periods, the bins for the histogram. Equivalent of
         the def __init__ in the PPSD class.
         
     """
@@ -317,9 +314,6 @@ xedges = 1.0 / xedges
     plot of the PPSD class.
     
     Possibility to use the same colomap as [McNamara2004], cf. cmap. 
-    
-    The #NOPE means we don't use the particular parameter. If some parameters 
-    are missing, check the trash.py file with already written script.
     
 """
 

@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jan  8 15:47:41 2023
+Update  on Tue Jan 17
 
 @author: papin
+
+This script does the same computation as the spec_estimation_yr.py but shows
+the results in a plot (curve) form and not in a probabilistic way. 
+Possibility to add the 5th & 95th percentile.
+
+Last time checked on Tue Jan 17
 """
 
-import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -14,30 +20,28 @@ from matplotlib import mlab
 from matplotlib.ticker import FormatStrFormatter
 
 from obspy import read
-from obspy import UTCDateTime
-from obspy.imaging.cm import obspy_sequential 
+from obspy import Stream, Trace, UTCDateTime
 from obspy.signal.util import prev_pow_2
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
-from matplotlib import cm
-from matplotlib.colors import ListedColormap,LinearSegmentedColormap
-
 # Functions called in this script #Mac & Windows
-# runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
-#         wdir='/Users/loispapin/Documents/Work/PNSN')
-runfile('C:/Users/papin/Documents/Spec/fcts.py', 
-        wdir='C:/Users/papin/Documents/Spec')
+runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
+        wdir='/Users/loispapin/Documents/Work/PNSN')
+# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
+#         wdir='C:/Users/papin/Documents/Spec')
 
-######################################################################
-#                               DATA                                 #
-######################################################################
+"""
+    Read the data with the function read of the Obspy module. Identify the 
+    necessary infos from it and also get the metadata of the station response.
+    
+"""
 
 # Start of the data and how long
 date = date_n(2015,1,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 365 #8 = 1 semaine
+num  = 2 #8 = 1 semaine
 
 # Nom du fichier
 sta = 'B006'
@@ -50,25 +54,26 @@ ppsd_length                    = segm
 overlap                        = 0
 period_smoothing_width_octaves = 1.0
 period_step_octaves            = 0.0125
-db_bins                        = (-160, -90, 0.5)
+db_bins                        = (-170, -90, 0.5)
 
-# Calculation on 0.01-16Hz
+# Calculation on 1-10Hz
 f1 = 1; f2 = 10; 
 period_limits = (1/f2,1/f1)
 
 # Initialisation of the parameters
 grid=True
 period_lim=(f1,f2) 
+beg = None #1st date
 
 # Create figure
 fig, ax = plt.subplots() 
-xlim = ax.get_xlim()
 fig.grid = grid
 
 # Start of the figure
 plt.ioff()
+
+### to be modified depending of the data used
 x=np.linspace(0.99355938,10.04341567,267)
-beg = None
 
 for iday in np.arange(day,day+num,dtype=int):
     
@@ -79,20 +84,20 @@ for iday in np.arange(day,day+num,dtype=int):
     elif len(str(iday)) == 3:
         day = (str(iday))
 
-    # #Mac
-    # path = "/Users/loispapin/Documents/Work/PNSN/"
-    # filename = (path + yr + '/Data/' + sta + '/' + sta 
-    #             + '.' + net + '.' + yr + '.' + day)
+    #Mac
+    path = "/Users/loispapin/Documents/Work/PNSN/"
+    filename = (path + yr + '/Data/' + sta + '/' + sta 
+                + '.' + net + '.' + yr + '.' + day)
 
-    # Windows
-    path = r"C:\Users\papin\Documents\Spec\Data"
-    filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
+    # # Windows
+    # path = r"C:\Users\papin\Documents\Spec\Data"
+    # filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
     
     # 1 day 
     stream = read(filename)
     trace  = stream[2] #Composante Z
     
-    if len(stream)==3:
+    if len(stream)==3: #Permet de choisir la trace EHZ en ligne 115
     
         stats         = trace.stats
         network       = trace.stats.network
@@ -101,7 +106,8 @@ for iday in np.arange(day,day+num,dtype=int):
         starttime     = trace.stats.starttime
         endtime       = trace.stats.endtime
         sampling_rate = trace.stats.sampling_rate
-    
+        
+        ### next optimization : boucle for the hours of starttime
         # Cut of the data on choosen times
         starttime = starttime+(3600*20)
         endtime   = starttime+segm
@@ -151,31 +157,24 @@ for iday in np.arange(day,day+num,dtype=int):
         current_times_used            = [] 
         current_times_all_details     = []
     
-        # Initialisation of the parameters
-        verbose     = False #Show the time data computed
-        skip_on_gaps= False
-    
+        # save information on available data and gaps
         times_data = insert_data_times(times_data,stream)
         times_gaps = insert_gap_times (times_gaps,stream)
+        # merge depending on skip_on_gaps
+        skip_on_gaps= False
         stream.merge(merge_method(skip_on_gaps),fill_value=0)
     
         # Read the all stream by the defined segments
         for trace in stream:
             if not sanity_check(trace,iid,sampling_rate):
-                msg = "merde"
-                warnings.warn(msg)
                 continue
             t1 = trace.stats.starttime
             t2 = trace.stats.endtime
             if t1 + ppsd_length - trace.stats.delta > t2:
-                msg = "merde"
-                warnings.warn(msg)
                 continue
             while t1 + ppsd_length - trace.stats.delta <= t2:
                 if check_time_present(times_processed,ppsd_length,overlap,t1):
-                    msg = "merde"
-                    msg = msg % t1
-                    warnings.warn(msg)
+                    continue
                 else:
                     slice = trace.slice(t1, t1 + ppsd_length -
                                         trace.stats.delta)
@@ -183,18 +182,7 @@ for iday in np.arange(day,day+num,dtype=int):
                                       period_bin_left_edges,period_bin_right_edges,
                                       times_processed,binned_psds,
                                       metadata,iid,trace=slice)
-                    if success:
-                        if verbose:
-                            print(t1)
-                        changed = True
                 t1 += (1 - overlap) * ppsd_length  # advance
-    
-        # Init
-        if changed:
-            current_hist_stack            = None
-            current_hist_stack_cumulative = None
-            current_times_used            = [] 
-            current_times_all_details     = []
     
         selected = stack_selection(current_times_all_details, times_processed,
                                    starttime=starttime, endtime=endtime)
@@ -227,8 +215,10 @@ for iday in np.arange(day,day+num,dtype=int):
         b=np.transpose(current_hist_stack)
         b=np.flipud(b)
         i=0
-        ib=np.linspace(0,266,267)
+        ### to be modified depending of the data used
+        ib=np.linspace(0,266,267) 
         curve=np.zeros(len(ib))
+        # Creation of the curve
         for i in ib:
             indx=np.nonzero(b[:,int(i)])
             indx=int(indx[0])
@@ -237,6 +227,7 @@ for iday in np.arange(day,day+num,dtype=int):
             curve[int(i)]=val[indx]
         curve1=np.flip(curve) 
         
+        # 1st date
         if beg==None:
             beg=starttime
         
@@ -301,31 +292,24 @@ for iday in np.arange(day,day+num,dtype=int):
         current_times_used            = [] 
         current_times_all_details     = []
         
-        # Initialisation of the parameters
-        verbose     = False #Show the time data computed
-        skip_on_gaps= False
-        
+        # save information on available data and gaps
         times_data = insert_data_times(times_data,stream)
         times_gaps = insert_gap_times (times_gaps,stream)
+        # merge depending on skip_on_gaps
+        skip_on_gaps= False
         stream.merge(merge_method(skip_on_gaps),fill_value=0)
         
         # Read the all stream by the defined segments
         for trace in stream:
             if not sanity_check(trace,iid,sampling_rate):
-                msg = "merde"
-                warnings.warn(msg)
                 continue
             t1 = trace.stats.starttime
             t2 = trace.stats.endtime
             if t1 + ppsd_length - trace.stats.delta > t2:
-                msg = "merde"
-                warnings.warn(msg)
                 continue
             while t1 + ppsd_length - trace.stats.delta <= t2:
                 if check_time_present(times_processed,ppsd_length,overlap,t1):
-                    msg = "merde"
-                    msg = msg % t1
-                    warnings.warn(msg)
+                    continue
                 else:
                     slice = trace.slice(t1, t1 + ppsd_length -
                                         trace.stats.delta)
@@ -333,18 +317,7 @@ for iday in np.arange(day,day+num,dtype=int):
                                       period_bin_left_edges,period_bin_right_edges,
                                       times_processed,binned_psds,
                                       metadata,iid,trace=slice)
-                    if success:
-                        if verbose:
-                            print(t1)
-                        changed = True
                 t1 += (1 - overlap) * ppsd_length  # advance
-        
-        # Init
-        if changed:
-            current_hist_stack            = None
-            current_hist_stack_cumulative = None
-            current_times_used            = [] 
-            current_times_all_details     = []
         
         selected = stack_selection(current_times_all_details, times_processed,
                                    starttime=starttime, endtime=endtime)
@@ -377,15 +350,17 @@ for iday in np.arange(day,day+num,dtype=int):
         b=np.transpose(current_hist_stack)
         b=np.flipud(b)
         i=0
-        ib=np.linspace(0,266,267)
+        ### to be modified depending of the data used
+        ib=np.linspace(0,266,267) 
         curve=np.zeros(len(ib))
+        # Creation of the curve
         for i in ib:
             indx=np.nonzero(b[:,int(i)])
             indx=int(indx[0])
             val=db_bin_edges
             val=val[::-1]
             curve[int(i)]=val[indx]
-        curve2=np.flip(curve) ############
+        curve2=np.flip(curve) 
         
         # 1 day 
         stream = read(filename)
@@ -448,31 +423,24 @@ for iday in np.arange(day,day+num,dtype=int):
         current_times_used            = [] 
         current_times_all_details     = []
         
-        # Initialisation of the parameters
-        verbose     = False #Show the time data computed
-        skip_on_gaps= False
-        
+        # save information on available data and gaps
         times_data = insert_data_times(times_data,stream)
         times_gaps = insert_gap_times (times_gaps,stream)
+        # merge depending on skip_on_gaps
+        skip_on_gaps= False
         stream.merge(merge_method(skip_on_gaps),fill_value=0)
         
         # Read the all stream by the defined segments
         for trace in stream:
             if not sanity_check(trace,iid,sampling_rate):
-                msg = "merde"
-                warnings.warn(msg)
                 continue
             t1 = trace.stats.starttime
             t2 = trace.stats.endtime
             if t1 + ppsd_length - trace.stats.delta > t2:
-                msg = "merde"
-                warnings.warn(msg)
                 continue
             while t1 + ppsd_length - trace.stats.delta <= t2:
                 if check_time_present(times_processed,ppsd_length,overlap,t1):
-                    msg = "merde"
-                    msg = msg % t1
-                    warnings.warn(msg)
+                    continue
                 else:
                     slice = trace.slice(t1, t1 + ppsd_length -
                                         trace.stats.delta)
@@ -480,18 +448,7 @@ for iday in np.arange(day,day+num,dtype=int):
                                       period_bin_left_edges,period_bin_right_edges,
                                       times_processed,binned_psds,
                                       metadata,iid,trace=slice)
-                    if success:
-                        if verbose:
-                            print(t1)
-                        changed = True
                 t1 += (1 - overlap) * ppsd_length  # advance
-        
-        # Init
-        if changed:
-            current_hist_stack            = None
-            current_hist_stack_cumulative = None
-            current_times_used            = [] 
-            current_times_all_details     = []
         
         selected = stack_selection(current_times_all_details, times_processed,
                                    starttime=starttime, endtime=endtime)
@@ -524,15 +481,17 @@ for iday in np.arange(day,day+num,dtype=int):
         b=np.transpose(current_hist_stack)
         b=np.flipud(b)
         i=0
-        ib=np.linspace(0,266,267)
+        ### to be modified depending of the data used
+        ib=np.linspace(0,266,267) 
         curve=np.zeros(len(ib))
+        # Creation of the curve
         for i in ib:
             indx=np.nonzero(b[:,int(i)])
             indx=int(indx[0])
             val=db_bin_edges
             val=val[::-1]
             curve[int(i)]=val[indx]
-        curve3=np.flip(curve) ############
+        curve3=np.flip(curve)
         
         # 1 day 
         stream = read(filename)
@@ -595,31 +554,24 @@ for iday in np.arange(day,day+num,dtype=int):
         current_times_used            = [] 
         current_times_all_details     = []
         
-        # Initialisation of the parameters
-        verbose     = False #Show the time data computed
-        skip_on_gaps= False
-        
+        # save information on available data and gaps
         times_data = insert_data_times(times_data,stream)
         times_gaps = insert_gap_times (times_gaps,stream)
+        # merge depending on skip_on_gaps
+        skip_on_gaps= False
         stream.merge(merge_method(skip_on_gaps),fill_value=0)
         
         # Read the all stream by the defined segments
         for trace in stream:
             if not sanity_check(trace,iid,sampling_rate):
-                msg = "merde"
-                warnings.warn(msg)
                 continue
             t1 = trace.stats.starttime
             t2 = trace.stats.endtime
             if t1 + ppsd_length - trace.stats.delta > t2:
-                msg = "merde"
-                warnings.warn(msg)
                 continue
             while t1 + ppsd_length - trace.stats.delta <= t2:
                 if check_time_present(times_processed,ppsd_length,overlap,t1):
-                    msg = "merde"
-                    msg = msg % t1
-                    warnings.warn(msg)
+                    continue
                 else:
                     slice = trace.slice(t1, t1 + ppsd_length -
                                         trace.stats.delta)
@@ -627,18 +579,7 @@ for iday in np.arange(day,day+num,dtype=int):
                                       period_bin_left_edges,period_bin_right_edges,
                                       times_processed,binned_psds,
                                       metadata,iid,trace=slice)
-                    if success:
-                        if verbose:
-                            print(t1)
-                        changed = True
                 t1 += (1 - overlap) * ppsd_length  # advance
-        
-        # Init
-        if changed:
-            current_hist_stack            = None
-            current_hist_stack_cumulative = None
-            current_times_used            = [] 
-            current_times_all_details     = []
         
         selected = stack_selection(current_times_all_details, times_processed,
                                    starttime=starttime, endtime=endtime)
@@ -671,8 +612,10 @@ for iday in np.arange(day,day+num,dtype=int):
         b=np.transpose(current_hist_stack)
         b=np.flipud(b)
         i=0
-        ib=np.linspace(0,266,267)
+        ### to be modified depending of the data used
+        ib=np.linspace(0,266,267) 
         curve=np.zeros(len(ib))
+        # Creation of the curve
         for i in ib:
             indx=np.nonzero(b[:,int(i)])
             indx=int(indx[0])
@@ -681,12 +624,13 @@ for iday in np.arange(day,day+num,dtype=int):
             curve[int(i)]=val[indx]
         curve4=np.flip(curve)
         
+        # Last date
         stp=endtime
         
+        # 4 segments to 1 variable gettint concatenated
         j=0
         curves=np.zeros((len(current_hist_stack),4))
         for j in np.linspace(0,266,267):
-            
             if (curves==0).all():
                 curves[0]=np.array([curve1[0],curve2[0],curve3[0],curve4[0]])
             else:
@@ -700,10 +644,14 @@ for iday in np.arange(day,day+num,dtype=int):
         plot=plt.plot(x,curve1,x,curve2,x,curve3,x,curve4,c='lightgrey')
         
     else:
-        print('len(stream)>3 donc jour pas valide')
+        print('len(stream)>3 donc jour pas valide pour PB network')
         print(trace.stats.starttime)
-######################################################################
 
+"""
+    Plot of the curves representing the PPSD for 4 segments of data on 1 day
+    during a longer period.
+  
+"""
 
 # Grid
 color = {"color": "0.7"}
@@ -726,7 +674,9 @@ title = title % (iid,beg.date,(stp-1).date,
                   np.abs(stp.datetime.hour-12))
 ax.set_title(title)
 
+# 5th & 95th percentiles
 k=0
+### to be optimized for the number 267
 curve5 =np.zeros(267)
 curve95=np.zeros(267)
 for k in np.linspace(0,265,266):

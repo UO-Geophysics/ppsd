@@ -7,6 +7,8 @@ Update  on Thu Jan 12
 
 @author: loispapin
 
+1st and original code of the work.
+
 This script is based on the PPSD class defined in the Obspy module. Without 
 changing the parameters, the output figure of this script is the same as 
 using the ppsd.plot of the module.
@@ -28,13 +30,6 @@ PSS : the original script of the PPSD class of the module can be found at
 /opt/anaconda3/lib/python3.9/site-packages/obspy/signal/spectral_estimation.py
 
 Last time checked on Thu Jan 12
-"""
-
-
-"""
-    Importation of the necessary librairies to execute the code and also,
-    in case, to execute the functions available in defs.py.
-    
 """
 
 import warnings
@@ -87,7 +82,13 @@ filename = (path + yr + '/Data/' + sta + '/' + sta
 # filename = (path + "\\" + sta + "\\" + sta + '.' 
 #             + net + '.' + yr + '.' + day)
 
+# Parameters 
 segm = 3600 #1h cut
+ppsd_length                    = segm 
+overlap                        = 0
+period_smoothing_width_octaves = 1.0
+period_step_octaves            = 0.0125
+db_bins                        = (-170, -90, 0.5)
 
 # 1 day 
 stream = read(filename)
@@ -116,16 +117,10 @@ metadata = client.get_stations(network=network,station=station,
 
 """
     Define the PPSD informations such as the segments for the calculations,
-    the frenquencies and periods, the bins for the histogram. Equivalent of
+    the frequencies and periods, the bins for the histogram. Equivalent of
     the def __init__ in the PPSD class.
     
 """
- 
-ppsd_length                    = segm 
-overlap                        = 0
-period_smoothing_width_octaves = 1.0
-period_step_octaves            = 0.0125
-db_bins                        = (-170, -90, 0.5)
 
 ##13 segments overlapping 75% and truncate to next lower power of 2
 #number of points
@@ -305,9 +300,6 @@ if current_hist_stack is None:
     
     Possibility to use the same colomap as [McNamara2004], cf. cmap. 
     
-    The #NOPE means we don't use the particular parameter. If some parameters 
-    are missing, check the trash.py file with already written script.
-    
 """
 
 # Initialisation of the parameters
@@ -374,7 +366,7 @@ ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 #                   UTCDateTime(ns=int(times_processed[0])).date,
 #                   UTCDateTime(ns=int(times_processed[-1])).date,
 #                   len(current_times_used),len(times_processed))
-title = "%s   %s     (from %s to %s)"
+title = "%s   %s   (from %s to %s)"
 title = title % (iid,starttime.date,
                   starttime.datetime.hour+1,
                   endtime.datetime.hour+1)

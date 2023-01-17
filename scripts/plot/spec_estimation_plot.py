@@ -2,17 +2,14 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Jan 07 2023
-Update  on Sun Jan 08 
+Update  on Tue Jan 17
 
 @author: loispapin
 
-"""
+This script does the same computation as the spec_estimation.py but shows
+the results in a plot (curve) form and not in a probabilistic way.
 
-
-"""
-    Importation of the necessary librairies to execute the code and also,
-    in case, to execute the functions available in defs.py.
-    
+Last time checked on Tue Jan 17
 """
 
 import warnings
@@ -24,14 +21,10 @@ from matplotlib import mlab
 from matplotlib.ticker import FormatStrFormatter
 
 from obspy import read
-from obspy import UTCDateTime
-from obspy.imaging.cm import obspy_sequential 
+from obspy import Stream, Trace, UTCDateTime
 from obspy.signal.util import prev_pow_2
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
-
-from matplotlib import cm
-from matplotlib.colors import ListedColormap,LinearSegmentedColormap
 
 # Functions called in this script #Mac & Windows
 runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
@@ -101,7 +94,8 @@ metadata = client.get_stations(network=network,station=station,
                                starttime=starttime,endtime=endtime,level='response')
 
 """
-
+    Define the PPSD informations such as the segments for the calculations,
+    the frequencies and periods, the bins for the histogram. 
 
 """
 
@@ -146,40 +140,47 @@ current_times_used            = []
 current_times_all_details     = []
 
 """
-
+    Process the data and create the first PSD data.
 
 """
 
-# Initialisation of the parameters
-verbose     = False #Show the time data computed
-skip_on_gaps= False
+# Verifications before the computations
+if metadata is None:
+    msg = ("PPSD instance has no metadata attached.")
+    raise Exception(msg)
+if isinstance(stream, Trace):
+    stream = Stream([stream])
+if not stream:
+    msg = 'Empty stream object provided.'
+    warnings.warn(msg)
+stream = stream.select(id=iid)
+if not stream:
+    msg = 'No traces with matching SEED ID in provided stream object.'
+    warnings.warn(msg)
+stream = stream.select(sampling_rate=sampling_rate)
+if not stream:
+    msg = ('No traces with matching sampling rate in provided stream '
+           'object.')
+    warnings.warn(msg)
 
 # save information on available data and gaps
 times_data = insert_data_times(times_data,stream)
 times_gaps = insert_gap_times (times_gaps,stream)
 # merge depending on skip_on_gaps
+skip_on_gaps= False
 stream.merge(merge_method(skip_on_gaps),fill_value=0)
 
 # Read the all stream by the defined segments
 for trace in stream:
     if not sanity_check(trace,iid,sampling_rate):
-        msg = "Skipping incompatible trace."
-        warnings.warn(msg)
         continue
     t1 = trace.stats.starttime
     t2 = trace.stats.endtime
     if t1 + ppsd_length - trace.stats.delta > t2:
-        msg = (f"Trace is shorter than this PPSD's 'ppsd_length' "
-               f"({str(ppsd_length)} seconds). Skipping trace: "
-               f"{str(trace)}")
-        warnings.warn(msg)
         continue
     while t1 + ppsd_length - trace.stats.delta <= t2:
         if check_time_present(times_processed,ppsd_length,overlap,t1):
-            msg = "Already covered time spans detected (e.g. %s), " + \
-                  "skipping these slices."
-            msg = msg % t1
-            warnings.warn(msg)
+            continue
         else:
             slice = trace.slice(t1, t1 + ppsd_length -
                                 trace.stats.delta)
@@ -187,21 +188,10 @@ for trace in stream:
                               period_bin_left_edges,period_bin_right_edges,
                               times_processed,binned_psds,
                               metadata,iid,trace=slice)
-            if success:
-                if verbose:
-                    print(t1)
-                changed = True
         t1 += (1 - overlap) * ppsd_length  # advance
 
-# Init
-if changed:
-    current_hist_stack            = None
-    current_hist_stack_cumulative = None
-    current_times_used            = [] 
-    current_times_all_details     = []
-
 """
-
+    Calculation of the 2D-histogram based on the processed data (time).
 
 """
 
@@ -230,21 +220,12 @@ if not used_count:
     current_hist_stack_cumulative = np.zeros_like(hist_stack,dtype=np.float32)
     current_times_used = used_times
 
-# concatenate all used spectra, evaluate index of amplitude bin each
-# value belongs to
 inds = np.hstack([binned_psds[i] for i in used_indices])
-
-# we need minus one because searchsorted returns the insertion index in
-# the array of bin edges which is the index of the corresponding bin
-# plus one
 inds = db_bin_edges.searchsorted(inds, side="left") - 1
 inds[inds == -1] = 0
-# same goes for values right of last bin edge
 inds[inds == num_db_bins] -= 1
-# reshape such that we can iterate over the array, extracting for
-# each period bin an array of all amplitude bins we have hit
 inds = inds.reshape((used_count, num_period_bins)).T
-# inds=inds[:,0]
+
 for i, inds_ in enumerate(inds):
     # count how often each bin has been hit for this period bin,
     # set the current 2D histogram column accordingly
@@ -260,8 +241,10 @@ current_times_used = used_times
 b=np.transpose(current_hist_stack)
 b=np.flipud(b)
 i=0
-ib=np.linspace(0,266,267)
+### to be modified depending of the data used
+ib=np.linspace(0,266,267) 
 curve=np.zeros(len(ib))
+# Creation of the curve
 for i in ib:
     indx=np.nonzero(b[:,int(i)])
     indx=int(indx[0])
@@ -270,13 +253,14 @@ for i in ib:
     curve[int(i)]=val[indx]
 curve=np.flip(curve) 
 
-"""
-
-  
-"""
 if current_hist_stack is None:
     msg = 'No data accumulated'
     raise Exception(msg)
+
+"""
+    Plot of the curve representing the PPSD for 1 segment of data.
+  
+"""
 
 # Initialisation of the parameters
 grid=True
@@ -291,9 +275,9 @@ xlim = ax.get_xlim()
 fig.grid = grid
 
 # PPSD
+### to be modified depending of the data used
 x=np.linspace(0.99355938,10.04341567,267)
 plt.scatter(x, curve,s=2)
-# plt.savefig('fig.jpg', dpi=300, bbox_inches='tight')
 
 # Grid
 color = {"color": "0.7"}
@@ -310,7 +294,7 @@ ax.xaxis.set_major_formatter(FormatStrFormatter("%g")) #Pas de 10^
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
-title = "%s   %s    (from %s to %s)"
+title = "%s   %s   (from %s to %s)"
 title = title % (iid,starttime.date,
                   starttime.datetime.hour+1,
                   endtime.datetime.hour+1)
@@ -318,4 +302,5 @@ ax.set_title(title)
 
 # Show the figure
 plt.ion()
+plt.savefig('fig.jpg', dpi=300, bbox_inches='tight')
 plt.show()

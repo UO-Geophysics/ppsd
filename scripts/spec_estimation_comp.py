@@ -26,12 +26,6 @@ stream.merge() for all
 Last time checked on Thu Jan 12
 """
 
-"""
-    Importation of the necessary librairies to execute the code and also,
-    in case, to execute the functions available in defs.py.
-    
-"""
-
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
@@ -140,7 +134,7 @@ for iday in np.arange(day,day+num,dtype=int):
     
     """
         Define the PPSD informations such as the segments for the calculations,
-        the frenquencies and periods, the bins for the histogram. Equivalent of
+        the frequencies and periods, the bins for the histogram. Equivalent of
         the def __init__ in the PPSD class.
         
     """
@@ -369,7 +363,7 @@ metadata = client.get_stations(network=network,station=station,
 
 """
     Define the PPSD informations such as the segments for the calculations,
-    the frenquencies and periods, the bins for the histogram. Equivalent of
+    the frequencies and periods, the bins for the histogram. Equivalent of
     the def __init__ in the PPSD class.
     
 """
