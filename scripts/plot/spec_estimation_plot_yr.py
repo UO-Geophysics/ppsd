@@ -10,6 +10,9 @@ the results in a plot (curve) form and not in a probabilistic way.
 Possibility to add the 5th & 95th percentile.
 
 Last time checked on Fri Jan 20
+
+Optimization process : make it work for several days (newcurves,cpt) & 
+modifiy for the trace (composantes,time data)
 """
 
 import numpy as np
