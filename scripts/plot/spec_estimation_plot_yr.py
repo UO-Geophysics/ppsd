@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jan  8 15:47:41 2023
-Update  on Fri Jan 20
+Update  on Fri Jan 23
 
 @author: papin
 
@@ -9,9 +9,9 @@ This script does the same computation as the spec_estimation_yr.py but shows
 the results in a plot (curve) form and not in a probabilistic way. 
 Possibility to add the 5th & 95th percentile.
 
-Last time checked on Fri Jan 20
+Last time checked on Fri Jan 23
 
-Optimization process : make it work for several days (newcurves,cpt) & 
+Optimization process : make it work for several days (newcurves,cpthr) & 
 modifiy for the trace (composantes,time data)
 """
 
@@ -40,10 +40,10 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2015,1,15)
+date = date_n(2015,12,20)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 1 #8 = 1 semaine
+num  = 2 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Nom du fichier
@@ -67,6 +67,7 @@ period_limits = (1/f2,1/f1)
 grid=True
 period_lim=(f1,f2) 
 beg = None #1st date
+cptday=0
 
 # Create figure
 fig, ax = plt.subplots() 
@@ -158,6 +159,8 @@ for iday in timeday:
             times_data      = []
             times_gaps      = []
             binned_psds     = []
+            current_hist_stack            = None
+            current_hist_stack_cumulative = None
             current_times_used            = [] 
             current_times_all_details     = []
         
@@ -195,14 +198,15 @@ for iday in timeday:
             used_times   = np.array(times_processed)[used_indices]
             num_period_bins = len(period_bin_centers)
             num_db_bins = len(db_bin_centers)
-        
+            
+            hist_stack = np.zeros((num_period_bins,num_db_bins),dtype=np.uint64)
+            
             inds = np.hstack([binned_psds[i] for i in used_indices])
             inds = db_bin_edges.searchsorted(inds, side="left") - 1
             inds[inds == -1] = 0
             inds[inds == num_db_bins] -= 1
             inds = inds.reshape((used_count, num_period_bins)).T
             
-            hist_stack = np.zeros((num_period_bins,num_db_bins),dtype=np.uint64)
             for i, inds_ in enumerate(inds):
                 hist_stack[i, :] = np.bincount(inds_, minlength=num_db_bins)
         
@@ -223,27 +227,44 @@ for iday in timeday:
                 val=db_bin_edges
                 val=val[::-1]
                 curve[int(ib)]=val[indx]
-            cpt=0
-            for itime in timehr:
-                if itime==ihour:
-                    break
-                else:
-                    cpt+=1
             curves=np.flip(curve)
-            
             xedges=1.0/period_xedges
             x=np.linspace(min(xedges),max(xedges),sz)
             plot=plt.plot(x,curves,c='lightgrey')
             
             # Curves stock
-            if ihour==timehr[0]: #1st time
+            if iday==day1:
+                cpthr=0
+            else:
+                cpthr=cptday*len(timehr)
+            for itime in timehr:
+                if itime==ihour:
+                    break
+                else:
+                    cpthr+=1
+            if ihour==timehr[0] and iday==day1: #1st time
                 newcurves=np.zeros((sz,len(timehr)*num))
                 newcurves[:,0]=curves
             else:
-                newcurves[:,cpt]=curves
+                newcurves[:,cpthr]=curves
+        cptday+=1
+    
     else:
         print('len(stream)>3 donc jour pas valide pour PB network')
         print(trace.stats.starttime)
+        cptday+=1
+
+### A resoudre
+newcurvesnew=0
+for icurves in np.arange(0,np.size(newcurves,axis=1),dtype=int):
+    if newcurves[:,icurves].all()==0:
+        continue
+    else:
+        curve=newcurves[:,icurves]
+        if newcurvesnew==0:
+            newcurvesnew=curve
+        else:
+            newcurvesnew=np.concatenate((newcurvesnew,curve),axis=1)
 
 # 5th & 95th percentiles
 curve5 =np.zeros(sz)
