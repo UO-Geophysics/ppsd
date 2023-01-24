@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jan  8 15:47:41 2023
-Update  on Fri Jan 23
+Update  on Fri Jan 24
 
 @author: papin
 
@@ -9,10 +9,9 @@ This script does the same computation as the spec_estimation_yr.py but shows
 the results in a plot (curve) form and not in a probabilistic way. 
 Possibility to add the 5th & 95th percentile.
 
-Last time checked on Fri Jan 23
+Last time checked on Fri Jan 24
 
-Optimization process : make it work for several days (newcurves,cpthr) & 
-modifiy for the trace (composantes,time data)
+Optimization process : modifiy for the traces (composantes,time data)
 """
 
 import numpy as np
@@ -29,10 +28,10 @@ from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
 # Functions called in this script #Mac & Windows
-# runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
-#         wdir='/Users/loispapin/Documents/Work/PNSN')
-runfile('C:/Users/papin/Documents/Spec/fcts.py', 
-        wdir='C:/Users/papin/Documents/Spec')
+runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
+        wdir='/Users/loispapin/Documents/Work/PNSN')
+# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
+#         wdir='C:/Users/papin/Documents/Spec')
 
 """
     Read the data with the function read of the Obspy module. Identify the 
@@ -67,9 +66,9 @@ period_limits = (1/f2,1/f1)
 # Initialisation of the parameters
 grid=True
 period_lim=(f1,f2) 
-beg = None #1st date
-cptday=0
+beg=None #1st date
 daynull=None
+cptday=0
 
 # Create figure
 fig, ax = plt.subplots() 
@@ -87,14 +86,14 @@ for iday in timeday:
     elif len(str(iday)) == 3:
         day = (str(iday))
 
-    # #Mac
-    # path = "/Users/loispapin/Documents/Work/PNSN/"
-    # filename = (path + yr + '/Data/' + sta + '/' + sta 
-    #             + '.' + net + '.' + yr + '.' + day)
+    # Mac
+    path = "/Users/loispapin/Documents/Work/PNSN/"
+    filename = (path + yr + '/Data/' + sta + '/' + sta 
+                + '.' + net + '.' + yr + '.' + day)
 
-    # Windows
-    path = r"C:\Users\papin\Documents\Spec\Data"
-    filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
+    # # Windows
+    # path = r"C:\Users\papin\Documents\Spec\Data"
+    # filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
     
     # 1 day 
     stream = read(filename)
@@ -259,13 +258,17 @@ for iday in timeday:
         else:
             daynull=np.append(daynull,cptday)
 
-# Remove of the hours/days unused 
-if daynull!=None:
-    col=((daynull-1)*len(timehr))
-    df = pd.DataFrame({'values': newcurves[:,col]})
-    df['values'] = df['values'].replace(0, np.nan)
-    for icol in np.arange(col,col+len(timehr),dtype=int):
-        newcurves[:,icol]=df['values']
+# Remove of the hours/days unused
+inull=0
+while inull < len(daynull):
+    rmday=daynull[inull]
+    if rmday!=None:
+        col=((rmday-1)*len(timehr))
+        df = pd.DataFrame({'values': newcurves[:,col]})
+        df['values'] = df['values'].replace(0, np.nan)
+        for icol in np.arange(col,col+len(timehr),dtype=int):
+            newcurves[:,icol]=df['values']
+    inull+=1
 
 # 5th & 95th percentiles
 curve5 =np.zeros(sz)
