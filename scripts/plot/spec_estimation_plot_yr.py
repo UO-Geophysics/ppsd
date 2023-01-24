@@ -12,8 +12,11 @@ Possibility to add the 5th & 95th percentile.
 Last time checked on Fri Jan 24
 
 Optimization process : modifiy for the traces (composantes,time data)
+Issues to solve : when a file doesn't exist, doesn't have the wanted hours
+
 """
 
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -28,10 +31,10 @@ from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
 # Functions called in this script #Mac & Windows
-runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
-        wdir='/Users/loispapin/Documents/Work/PNSN')
-# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
-#         wdir='C:/Users/papin/Documents/Spec')
+# runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
+#         wdir='/Users/loispapin/Documents/Work/PNSN')
+runfile('C:/Users/papin/Documents/Spec/fcts.py', 
+        wdir='C:/Users/papin/Documents/Spec')
 
 """
     Read the data with the function read of the Obspy module. Identify the 
@@ -40,11 +43,12 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2015,12,26)
+date = date_n(2015,12,16)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 5 #8 = 1 semaine
+num  = 16 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
+tmp=timeday
 
 # Nom du fichier
 sta = 'B926'
@@ -69,6 +73,7 @@ period_lim=(f1,f2)
 beg=None #1st date
 daynull=None
 cptday=0
+skip_on_gaps=False
 
 # Create figure
 fig, ax = plt.subplots() 
@@ -86,17 +91,23 @@ for iday in timeday:
     elif len(str(iday)) == 3:
         day = (str(iday))
 
-    # Mac
-    path = "/Users/loispapin/Documents/Work/PNSN/"
-    filename = (path + yr + '/Data/' + sta + '/' + sta 
-                + '.' + net + '.' + yr + '.' + day)
+    # # Mac
+    # path = "/Users/loispapin/Documents/Work/PNSN/"
+    # filename = (path + yr + '/Data/' + sta + '/' + sta 
+    #             + '.' + net + '.' + yr + '.' + day)
 
-    # # Windows
-    # path = r"C:\Users\papin\Documents\Spec\Data"
-    # filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
+    # Windows
+    path = r"C:\Users\papin\Documents\Spec\Data"
+    filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
     
-    # 1 day 
+    # 1 day
+    # try:
+    #     stream = read(filename)
+    # except:
+    #     print('nope')
+    
     stream = read(filename)
+    stream.merge(merge_method(skip_on_gaps),fill_value=0)
     trace  = stream[2] #Composante Z
     
     stats         = trace.stats
@@ -118,6 +129,8 @@ for iday in timeday:
             # Cut of the data on choosen times
             starttimenew = starttime+(3600*ihour)
             endtimenew   = starttimenew+segm
+            
+            ## Try
             stream = read(filename,starttime=starttimenew,endtime=endtimenew)
             trace  = stream[2] #Composante Z
             
@@ -250,7 +263,6 @@ for iday in timeday:
         cptday+=1
     
     else:
-        print('len(stream)>3 donc jour pas valide pour PB network')
         print(trace.stats.starttime)
         cptday+=1
         if daynull==None:
@@ -260,8 +272,11 @@ for iday in timeday:
 
 # Remove of the hours/days unused
 inull=0
-while inull < len(daynull):
-    rmday=daynull[inull]
+while inull < np.size(daynull):
+    if np.size(daynull)==1:
+        rmday=daynull
+    elif np.size(daynull)>1:
+        rmday=daynull[inull]
     if rmday!=None:
         col=((rmday-1)*len(timehr))
         df = pd.DataFrame({'values': newcurves[:,col]})
