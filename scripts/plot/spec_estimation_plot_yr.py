@@ -16,6 +16,7 @@ modifiy for the trace (composantes,time data)
 """
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 from datetime import date as date_n
@@ -28,10 +29,10 @@ from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
 # Functions called in this script #Mac & Windows
-runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
-        wdir='/Users/loispapin/Documents/Work/PNSN')
-# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
-#         wdir='C:/Users/papin/Documents/Spec')
+# runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
+#         wdir='/Users/loispapin/Documents/Work/PNSN')
+runfile('C:/Users/papin/Documents/Spec/fcts.py', 
+        wdir='C:/Users/papin/Documents/Spec')
 
 """
     Read the data with the function read of the Obspy module. Identify the 
@@ -40,14 +41,14 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2015,12,20)
+date = date_n(2015,12,26)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 2 #8 = 1 semaine
+num  = 5 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Nom du fichier
-sta = 'B006'
+sta = 'B926'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
 
@@ -68,6 +69,7 @@ grid=True
 period_lim=(f1,f2) 
 beg = None #1st date
 cptday=0
+daynull=None
 
 # Create figure
 fig, ax = plt.subplots() 
@@ -85,14 +87,14 @@ for iday in timeday:
     elif len(str(iday)) == 3:
         day = (str(iday))
 
-    #Mac
-    path = "/Users/loispapin/Documents/Work/PNSN/"
-    filename = (path + yr + '/Data/' + sta + '/' + sta 
-                + '.' + net + '.' + yr + '.' + day)
+    # #Mac
+    # path = "/Users/loispapin/Documents/Work/PNSN/"
+    # filename = (path + yr + '/Data/' + sta + '/' + sta 
+    #             + '.' + net + '.' + yr + '.' + day)
 
-    # # Windows
-    # path = r"C:\Users\papin\Documents\Spec\Data"
-    # filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
+    # Windows
+    path = r"C:\Users\papin\Documents\Spec\Data"
+    filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
     
     # 1 day 
     stream = read(filename)
@@ -199,14 +201,13 @@ for iday in timeday:
             num_period_bins = len(period_bin_centers)
             num_db_bins = len(db_bin_centers)
             
-            hist_stack = np.zeros((num_period_bins,num_db_bins),dtype=np.uint64)
-            
             inds = np.hstack([binned_psds[i] for i in used_indices])
             inds = db_bin_edges.searchsorted(inds, side="left") - 1
             inds[inds == -1] = 0
             inds[inds == num_db_bins] -= 1
             inds = inds.reshape((used_count, num_period_bins)).T
             
+            hist_stack = np.zeros((num_period_bins,num_db_bins),dtype=np.uint64)
             for i, inds_ in enumerate(inds):
                 hist_stack[i, :] = np.bincount(inds_, minlength=num_db_bins)
         
@@ -253,25 +254,25 @@ for iday in timeday:
         print('len(stream)>3 donc jour pas valide pour PB network')
         print(trace.stats.starttime)
         cptday+=1
-
-### A resoudre
-newcurvesnew=0
-for icurves in np.arange(0,np.size(newcurves,axis=1),dtype=int):
-    if newcurves[:,icurves].all()==0:
-        continue
-    else:
-        curve=newcurves[:,icurves]
-        if newcurvesnew==0:
-            newcurvesnew=curve
+        if daynull==None:
+            daynull=cptday
         else:
-            newcurvesnew=np.concatenate((newcurvesnew,curve),axis=1)
+            daynull=np.append(daynull,cptday)
+
+# Remove of the hours/days unused 
+if daynull!=None:
+    col=((daynull-1)*len(timehr))
+    df = pd.DataFrame({'values': newcurves[:,col]})
+    df['values'] = df['values'].replace(0, np.nan)
+    for icol in np.arange(col,col+len(timehr),dtype=int):
+        newcurves[:,icol]=df['values']
 
 # 5th & 95th percentiles
 curve5 =np.zeros(sz)
 curve95=np.zeros(sz)
 for ip in np.linspace(0,sz-1,sz):
-    curve5[int(ip)] =np.percentile(newcurves[int(ip)], 5)
-    curve95[int(ip)]=np.percentile(newcurves[int(ip)],95)
+    curve5[int(ip)] =np.nanpercentile(newcurves[int(ip)], 5)
+    curve95[int(ip)]=np.nanpercentile(newcurves[int(ip)],95)
 
 plt.plot(x,curve5,'b',x,curve95,'b')
 
