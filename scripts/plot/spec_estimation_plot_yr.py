@@ -43,12 +43,16 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2015,12,20)
+date = date_n(2015,12,16)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 2 #8 = 1 semaine
+num  = 16 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 tmp=timeday
+
+# Period of time for computations per segm
+hour1 = 20; hour2 = 24
+timehr=np.arange(hour1,hour2,1,dtype=int)
 
 # Nom du fichier
 sta = 'B009'
@@ -118,10 +122,6 @@ for iday in timeday:
     starttime     = trace.stats.starttime
     endtime       = trace.stats.endtime
     sampling_rate = trace.stats.sampling_rate
-        
-    # Period of time for computations per segm
-    hour1 = 20; hour2 = 24
-    timehr=np.arange(hour1,hour2,1,dtype=int)
     
     for ihour in timehr:
 
@@ -249,7 +249,6 @@ for iday in timeday:
             cpthr=0
         else:
             cpthr=cptday*len(timehr)
-            print(cptday)
         for itime in timehr:
             if itime==ihour:
                 break
