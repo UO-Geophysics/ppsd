@@ -423,9 +423,6 @@ for iday in timeday:
         current_hist_stack = hist_stack
         current_times_used = used_times
         
-        # Last calculated time
-        end=endtimenew
-        
         # Creation of a plot representing the PPSD
         sz=len(current_hist_stack) #Size=number of frequencies
         b=np.flipud(np.transpose(current_hist_stack))
