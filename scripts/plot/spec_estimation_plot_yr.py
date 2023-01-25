@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jan  8 15:47:41 2023
-Update  on Fri Jan 24
+Update  on Wed Jan 24
 
 @author: papin
 
@@ -9,7 +9,7 @@ This script does the same computation as the spec_estimation_yr.py but shows
 the results in a plot (curve) form and not in a probabilistic way. 
 Possibility to add the 5th & 95th percentile.
 
-Last time checked on Fri Jan 24
+Last time checked on Wed Jan 24
 
 Optimization process : modifiy for the traces (composantes,time data)
 Issues to solve : when a file doesn't exist, doesn't have the wanted hours
@@ -249,6 +249,7 @@ for iday in timeday:
             cpthr=0
         else:
             cpthr=cptday*len(timehr)
+            print(cptday)
         for itime in timehr:
             if itime==ihour:
                 break
