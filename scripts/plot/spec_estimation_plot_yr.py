@@ -31,10 +31,10 @@ from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
 # Functions called in this script #Mac & Windows
-# runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
-#         wdir='/Users/loispapin/Documents/Work/PNSN')
-runfile('C:/Users/papin/Documents/Spec/fcts.py', 
-        wdir='C:/Users/papin/Documents/Spec')
+runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
+        wdir='/Users/loispapin/Documents/Work/PNSN')
+# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
+#         wdir='C:/Users/papin/Documents/Spec')
 
 """
     Read the data with the function read of the Obspy module. Identify the 
@@ -46,12 +46,12 @@ runfile('C:/Users/papin/Documents/Spec/fcts.py',
 date = date_n(2015,12,20)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 10 #8 = 1 semaine
+num  = 2 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 tmp=timeday
 
 # Nom du fichier
-sta = 'B926'
+sta = 'B009'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
 
@@ -91,14 +91,14 @@ for iday in timeday:
     elif len(str(iday)) == 3:
         day = (str(iday))
 
-    # # Mac
-    # path = "/Users/loispapin/Documents/Work/PNSN/"
-    # filename = (path + yr + '/Data/' + sta + '/' + sta 
-    #             + '.' + net + '.' + yr + '.' + day)
+    # Mac
+    path = "/Users/loispapin/Documents/Work/PNSN/"
+    filename = (path + yr + '/Data/' + sta + '/' + sta 
+                + '.' + net + '.' + yr + '.' + day)
 
-    # Windows
-    path = r"C:\Users\papin\Documents\Spec\Data"
-    filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
+    # # Windows
+    # path = r"C:\Users\papin\Documents\Spec\Data"
+    # filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
     
     # 1 day
     stream = read(filename)
