@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Feb  2 10:50:14 2023
-Update  on Tue Feb 7
+Update  on Tue Feb  7
 
 @author: loispapin
 """
@@ -208,7 +208,7 @@ for iday in timeday:
     # Cutting out the segments with earthquakes
     hr_out=np.unique(timehr[h])
     timehr=np.delete(timehr,h)
-    # print(timehr)
+    print(timehr)
     
     # Data file
     path = "/Users/loispapin/Documents/Work/PNSN/"
