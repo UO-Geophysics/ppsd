@@ -91,6 +91,12 @@ nwin=int(sr*winlen) # leave this
 nshift=int(sr*shift) # leave this
 plots=1
 
+# make stack
+wid_sec = 15
+sr = 100
+# epsilon value shouldn't change
+epsilon = 1e-6
+
 # SET MODEL FILE NAME    
 model_save_file="unet_3comp_logfeat_b_eps_"+str(epos)+"_sr_"+str(sr)+"_std_"+str(std)+".tf"                  
 if large:
@@ -100,17 +106,20 @@ if drop:
     model_save_file="drop_"+model_save_file
 
 # BUILD THE MODEL
-# print("BUILD THE MODEL")
 if drop:
     model=unet_tools.make_large_unet_drop_b(fac,sr,ncomps=3)     
 else:
     model=unet_tools.make_large_unet_b(fac,sr,ncomps=3)  
 
 # LOAD THE MODEL
-# print('Loading training results from '+model_save_file)
 model.load_weights("/Users/loispapin/Documents/Work/AI/"+model_save_file)  
 
-##### FROM HERE #####
+"""
+    Start of the figure : first calculation of pvals and svals values ; then
+    taking out the hour-segments with potentials earthquakes ; then plotting
+    the PPSD curves for all the data frame.
+    
+"""
 
 # Create figure
 fig, ax = plt.subplots() 
@@ -140,12 +149,7 @@ for iday in timeday:
     sav_data_Z = []
     sav_data_E = []
     sav_data_N = []
-          
-    # make stack
-    wid_sec = 15
-    sr = 100
-    # epsilon value shouldn't change
-    epsilon = 1e-6
+
     # what decision value are you using
     wid_pts = wid_sec * sr
     i_st = 0
@@ -173,7 +177,7 @@ for iday in timeday:
     pvals=tmp_y[:,:,0].ravel()
     svals=tmp_y[:,:,1].ravel()
 
-    #### CUT POUR h1 & h2 ####
+    #### CUT POUR h1 till h2 ####
 
     indx=np.where((times[:-1]>=h1*3600) & (times[:-1]<=h2*3600))
     times=times[indx]
