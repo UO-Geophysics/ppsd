@@ -43,10 +43,10 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2015,12,16)
+date = date_n(2015,12,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 16 #8 = 1 semaine
+num  = 31 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 tmp=timeday
 
@@ -55,8 +55,9 @@ hour1 = 20; hour2 = 24
 timehr=np.arange(hour1,hour2,1,dtype=int)
 
 # Nom du fichier
-sta = 'B009'
+sta = 'B927'
 net = 'PB'
+channel = 'EHZ'
 yr  = str(date.timetuple().tm_year)
 
 # Parameters 
@@ -65,7 +66,7 @@ ppsd_length                    = segm
 overlap                        = 0
 period_smoothing_width_octaves = 1.0
 period_step_octaves            = 0.0125
-db_bins                        = (-170, -90, 0.5)
+db_bins                        = (-170, -110, 0.5)
 
 # Calculation on 1-10Hz
 f1 = 1; f2 = 10; 
@@ -78,6 +79,7 @@ beg=None #1st date
 daynull=None
 cptday=0
 skip_on_gaps=False
+time_error=[]
 
 # Create figure
 fig, ax = plt.subplots() 
@@ -99,21 +101,15 @@ for iday in timeday:
     path = "/Users/loispapin/Documents/Work/PNSN/"
     filename = (path + yr + '/Data/' + sta + '/' + sta 
                 + '.' + net + '.' + yr + '.' + day)
-
-    # # Windows
-    # path = r"C:\Users\papin\Documents\Spec\Data"
-    # filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
     
     # 1 day
     stream = read(filename)
     stream.merge(merge_method(skip_on_gaps),fill_value=0)
-    
-    if len(stream)==3:
-        nb=2
-    elif len(stream)==1:
-        nb=0
-        
-    trace  = stream[nb] #Composante Z
+    # Choix de la composante (channel)
+    cpttr=0
+    while stream[cpttr].stats.channel!=channel:
+        cpttr+=1
+    trace=stream[cpttr]
     
     stats         = trace.stats
     network       = trace.stats.network
@@ -129,9 +125,14 @@ for iday in timeday:
         starttimenew = starttime+(3600*ihour)
         endtimenew   = starttimenew+segm
         
-        ## Try
+        # 1 hour
         stream = read(filename,starttime=starttimenew,endtime=endtimenew)
-        trace  = stream[nb] #Composante Z
+        stream.merge(merge_method(skip_on_gaps),fill_value=0)
+        # Choix de la composante (channel)
+        cpttr=0
+        while stream[cpttr].stats.channel!=channel:
+            cpttr+=1
+        trace = stream[cpttr]
         
         # First calculated time
         if beg==None:
@@ -140,11 +141,14 @@ for iday in timeday:
         print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
     
         iid = "%(network)s.%(station)s.%(location)s.%(channel)s" % stats
-        metadata = client.get_stations(network=network,station=station,
-                                       starttime=starttimenew,endtime=endtimenew,level='response')
+        try:
+            metadata = client.get_stations(network=network,station=station,
+                                           starttime=starttimenew,endtime=endtimenew,level='response')
+        except:
+            time_error.append(trace)
     
         # FFT calculations
-        nfft=prev_pow_2((ppsd_length*sampling_rate)/4.0) 
+        nfft=prev_pow_2((ppsd_length*sampling_rate)/4.0)
         nlap=int(0.75*nfft)            
         leng=int(sampling_rate*ppsd_length)
         _,freq=mlab.psd(np.ones(leng),nfft,sampling_rate,noverlap=nlap) 
@@ -172,8 +176,6 @@ for iday in timeday:
         times_data      = []
         times_gaps      = []
         binned_psds     = []
-        current_hist_stack            = None
-        current_hist_stack_cumulative = None
         current_times_used            = [] 
         current_times_all_details     = []
     
@@ -240,6 +242,7 @@ for iday in timeday:
             val=val[::-1]
             curve[int(ib)]=val[indx]
         curves=np.flip(curve)
+        # print(curves)
         xedges=1.0/period_xedges
         x=np.linspace(min(xedges),max(xedges),sz)
         plot=plt.plot(x,curves,c='lightgrey')
@@ -284,10 +287,15 @@ ax.set_xlim(period_lim)
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
-title = "%s   %s--%s   (from %s to %s pm)"
+if np.abs(end.datetime.hour-12)>=12:
+    t='pm'
+else:
+    t='am'
+title = "%s   %s--%s   (from %s to %s %s) "
 title = title % (iid,beg.date,(end-1).date,
                   np.abs(beg.datetime.hour-12),
-                  np.abs(end.datetime.hour-12))
+                  np.abs(end.datetime.hour-12),
+                  t)
 ax.set_title(title)
 
 # Show the figure
