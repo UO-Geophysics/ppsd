@@ -2,9 +2,23 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Feb  2 10:50:14 2023
-Update  on Tue Feb  7
+Update  on Fri Feb 10
 
 @author: loispapin
+
+This script is a combination of spec_estimation_plot_yr.py by Lois Papin and 
+the CNN scripts used by Amanda Thomas>
+
+It reads and creates probabilties of picking P and S values on choosen signals
+by using  CNN. By choosing a threshold, it allows to clean signals that are 
+most likely an earthquake. Signals after that, are mostly (maybe only) composed
+of noise. Then PPSD computations are used on that new clean signal to study the 
+amplitude of a range of frequencies.
+
+Last time checked on Fri Feb 10
+
+Optimization process : calculating time of processing (import time)
+
 """
 
 import os
@@ -34,10 +48,10 @@ client = Client("IRIS")
 """
 
 # Start of the data and how long
-date = date_n(2015,1,1)
+date = date_n(2015,3,20)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 365 #8 = 1 semaine
+num  = 20 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 tmp=timeday
 
@@ -46,9 +60,9 @@ h1 = 20; h2 = 24
 timehr=np.arange(h1,h2,1,dtype=int)
 
 # Nom du fichier
-sta = 'B927'
+sta = 'B926'
 net = 'PB'
-channel = 'EHZ'
+cha = 'EHZ' 
 yr  = str(date.timetuple().tm_year)
 
 # Parameters 
@@ -69,10 +83,12 @@ period_lim=(f1,f2)
 beg=None #1st date
 daynull=None
 cptday=0
+newcurves=None
 skip_on_gaps=False
 time_error=[] #Erreur de connexion (except)
 hr_out=[]
 trace_out=[] #Trace with pvals or svals >= threshold
+time_unv=[] #Lack of data
 
 """
     Initialization of the parameters from the apply_cnn_toeqs.py script.
@@ -96,6 +112,7 @@ wid_sec = 15
 sr = 100
 # epsilon value shouldn't change
 epsilon = 1e-6
+thrhold=0.5
 
 # SET MODEL FILE NAME    
 model_save_file="unet_3comp_logfeat_b_eps_"+str(epos)+"_sr_"+str(sr)+"_std_"+str(std)+".tf"                  
@@ -186,7 +203,7 @@ for iday in timeday:
     
     #### DETECTE LES VALEURS >= threshold ####
     
-    indx=np.where((pvals>=1)|(svals>=1))
+    indx=np.where((pvals>=thrhold)|(svals>=thrhold))
     
     h=[]
     timehr=np.arange(h1,h2,1,dtype=int)
@@ -208,21 +225,29 @@ for iday in timeday:
     # Cutting out the segments with earthquakes
     hr_out=np.unique(timehr[h])
     timehr=np.delete(timehr,h)
-    print(timehr)
+    print(timehr) #Hours processed
     
     # Data file
     path = "/Users/loispapin/Documents/Work/PNSN/"
     filename = (path + yr + '/Data/' + sta + '/' + sta 
                 + '.' + net + '.' + yr + '.' + day)
     
-    # 1 day
-    stream = read(filename)
-    stream.merge(fcts.merge_method(skip_on_gaps),fill_value=0)
-    # Choix de la composante (channel)
-    cpttr=0
-    while stream[cpttr].stats.channel!=channel:
-        cpttr+=1
-    trace=stream[cpttr]
+    try: #if stream is empty or the wanted hours are missing
+        # 1 day 
+        stream = read(filename)
+        stream.merge(fcts.merge_method(skip_on_gaps),fill_value=0)
+        # Choix de la composante (channel)
+        cpttr=0
+        while stream[cpttr].stats.channel!=cha:
+            cpttr+=1
+        trace=stream[cpttr]
+    except:
+        print('Probleme de premiere lecture du file')
+        print('A verifier si pb de channel ou autre')
+        name=net+'.'+sta+'..'+cha+'.'+day
+        time_unv.append(name)
+        print('Break sur '+name)
+        break
     
     stats         = trace.stats
     network       = trace.stats.network
@@ -247,14 +272,19 @@ for iday in timeday:
         starttimenew = starttime+(3600*ihour)
         endtimenew   = starttimenew+segm
         
-        # 1 hour
-        stream = read(filename,starttime=starttimenew,endtime=endtimenew)
-        stream.merge(fcts.merge_method(skip_on_gaps),fill_value=0)
-        # Choix de la composante (channel)
-        cpttr=0
-        while stream[cpttr].stats.channel!=channel:
-            cpttr+=1
-        trace = stream[cpttr]
+        try: #if stream is empty or the wanted hours are missing
+            # 1 hour
+            stream = read(filename,starttime=starttimenew,endtime=endtimenew)
+            stream.merge(fcts.merge_method(skip_on_gaps),fill_value=0)
+            # Choix de la composante (channel)
+            cpttr=0
+            while stream[cpttr].stats.channel!=cha:
+                cpttr+=1
+            trace = stream[cpttr]
+        except:
+            name=net+'.'+sta+'..'+cha+'.'+day
+            time_unv.append(name)
+            break
         
         # First calculated time (need for title)
         if beg==None:
@@ -262,8 +292,7 @@ for iday in timeday:
         
         print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
     
-        iid = "%(network)s.%(station)s.%(location)s.%(channel)s" % stats 
-        print(iid)
+        iid = "%(network)s.%(station)s..%(channel)s" % stats 
         try: #Except for a XLMSyntaxError
             metadata = client.get_stations(network=network,station=station,
                                            starttime=starttimenew,endtime=endtimenew,level='response')
@@ -384,46 +413,59 @@ for iday in timeday:
             newcurves[:,cpthr]=curves
     cptday+=1
 
-print('Number of segments with earthquakes taking out : '+str(len(trace_out)))
-print('Number of segments plotted : '+str((num*(h2-h1)-len(trace_out)))+' out of '+str(num*(h2-h1)))
+"""
+    This section plots the processed data and say something if no data was
+    calculated. This part stays as print but goes for logging in talapas.
+    
+"""
 
-# Changing column of 0 in nan for percentiles
-df=pd.DataFrame(newcurves)
-df.replace(0,np.nan,inplace=True)
-newcurves=df.to_numpy()
-
-# 5th & 95th percentiles
-curve5 =np.zeros(sz)
-curve95=np.zeros(sz)
-for ip in np.linspace(0,sz-1,sz):
-    curve5[int(ip)] =np.nanpercentile(newcurves[int(ip)], 5)
-    curve95[int(ip)]=np.nanpercentile(newcurves[int(ip)],95)
-
-plt.plot(x,curve5,'b',x,curve95,'b')
-
-# Grid
-color = {"color": "0.7"}
-ax.grid(True, which="major", **color)
-ax.grid(True, which="minor", **color)
-
-# Axis and title
-ax.set_xlabel('Frequency [Hz]')
-ax.invert_xaxis()
-ax.set_xlim(period_lim)
-
-ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
-ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
-
-if (h1-12)<=12:
-    t='pm'
+if newcurves is None:
+    print('No data to plot (see var newcurves)')
+    print('Name of the segments which the data were unavailable : '+str(time_unv))
 else:
-    t='am'
-title = "%s   %s--%s   (from %s to %s %s) "
-title = title % (iid,beg.date,(end-1).date,
-                  np.abs(h1-12),np.abs(h2-12),t)
-ax.set_title(title)
-
-# Show the figure
-plt.ion()
-plt.savefig('fig.jpg', dpi=300, bbox_inches='tight')
-plt.show()
+    print('Number of segments with earthquakes taking out : '+str(len(trace_out)))
+    print('Number of segments plotted : '+str((num*(h2-h1)-len(trace_out)))+' out of '+str(num*(h2-h1)))
+    if time_unv!=[]:
+        print('Name of the segments which the data were unavailable : '+str(time_unv))
+    
+    # Changing column of 0 in nan for percentiles
+    df=pd.DataFrame(newcurves)
+    df.replace(0,np.nan,inplace=True)
+    newcurves=df.to_numpy()
+    
+    # 5th & 95th percentiles
+    curve5 =np.zeros(sz)
+    curve95=np.zeros(sz)
+    for ip in np.linspace(0,sz-1,sz):
+        curve5[int(ip)] =np.nanpercentile(newcurves[int(ip)], 5)
+        curve95[int(ip)]=np.nanpercentile(newcurves[int(ip)],95)
+    
+    plt.plot(x,curve5,'b',x,curve95,'b')
+    
+    # Grid
+    color = {"color": "0.7"}
+    ax.grid(True, which="major", **color)
+    ax.grid(True, which="minor", **color)
+    
+    # Axis and title
+    ax.set_xlabel('Frequency [Hz]')
+    ax.invert_xaxis()
+    ax.set_xlim(period_lim)
+    
+    ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
+    ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
+    
+    if (h1-12)<=12:
+        t='pm'
+    else:
+        t='am'
+    title = "%s   %s--%s   (from %s to %s %s) "
+    title = title % (iid,beg.date,(end-1).date,
+                      np.abs(h1-12),np.abs(h2-12),t)
+    ax.set_title(title)
+    
+    # Show the figure
+    plt.ion()
+    plt.savefig(f'{net}.{sta}.{cha}_fig.jpg', dpi=300, bbox_inches='tight')
+    plt.savefig('fig.jpg', dpi=300, bbox_inches='tight')
+    plt.show()

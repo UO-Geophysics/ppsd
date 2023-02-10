@@ -35,17 +35,18 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 ######################################################################
 
 # Start of the data and how long
-date = date_n(2015,12,16)
+date = date_n(2015,4,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 16 #8 = 1 semaine
+num  = 1 #8 = 1 semaine
 
 # Nom du fichier
-sta = 'B926'
+sta = 'B009'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
 
 segm = 3600 #1h cut
+skip_on_gaps=False
 
 for iday in np.arange(day,day+num,dtype=int):
     
@@ -61,10 +62,9 @@ for iday in np.arange(day,day+num,dtype=int):
     filename = (path + yr + '/Data/' + sta + '/' + sta 
                 + '.' + net + '.' + yr + '.' + day)
     
-    # 1 day 
     stream = read(filename)
+    stream.merge(merge_method(skip_on_gaps),fill_value=0)
     trace  = stream[2] #Composante Z
-    
     stats         = trace.stats
     network       = trace.stats.network
     station       = trace.stats.station
@@ -73,9 +73,8 @@ for iday in np.arange(day,day+num,dtype=int):
     endtime       = trace.stats.endtime
     sampling_rate = trace.stats.sampling_rate
     
-    # Cut of the data on choosen times
-    starttime = starttime+(3600*23)
-    endtime   = starttime+segm
-    stream = read(filename,starttime=starttime,endtime=endtime)
-    trace  = stream[2] #Composante Z
+    starttime = starttime+(3600*23)#+(27.05/60)))
+    endtime   = starttime+3600
+    trace=trace.trim(starttime=starttime,endtime=endtime)
+    print(trace)
     trace.plot()

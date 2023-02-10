@@ -55,7 +55,7 @@ hour1 = 20; hour2 = 24
 timehr=np.arange(hour1,hour2,1,dtype=int)
 
 # Nom du fichier
-sta = 'B927'
+sta = 'B926'
 net = 'PB'
 channel = 'EHZ'
 yr  = str(date.timetuple().tm_year)
