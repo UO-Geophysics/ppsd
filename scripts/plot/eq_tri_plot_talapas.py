@@ -17,7 +17,7 @@ amplitude of a range of frequencies.
 Last time checked on Fri Feb 10
 
 Optimization process : calculating time of processing (import time),
-create files to replace the print
+create files to replace the print, path to be modified
 
 """
 
