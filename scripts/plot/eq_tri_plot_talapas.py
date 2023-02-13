@@ -25,6 +25,7 @@ import os
 import fcts
 import pickle
 import argparse
+import logging
 import datetime
 import unet_tools
 import numpy as np
@@ -73,11 +74,20 @@ def get_args():
 """
 
 def main():
+    logging.basicConfig(
+        format='[%(levelname)s] %(asctime)s %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p',
+        level=logging.INFO,
+        handlers=[
+            logging.FileHandler("out.log"),
+            logging.StreamHandler()
+        ]
+    )
     args = get_args()
-    print(' #--DATA INFOS--# ')
-    print(str(args.mth)+'-'+str(args.day)+'-'+str(args.yr)+' + '+str(args.num)+' days')
-    print('from '+str(args.h1)+' to '+str(args.h2)+' for '+args.net+'.'+args.sta)
-    print('from '+str(args.f1)+' to '+str(args.f2)+' Hz')
+    logging.info(' #--DATA INFOS--# ')
+    logging.info(str(args.mth)+'-'+str(args.day)+'-'+str(args.yr)+' + '+str(args.num)+' days')
+    logging.info('from '+str(args.h1)+' to '+str(args.h2)+' for '+args.net+'.'+args.sta)
+    logging.info('from '+str(args.f1)+' to '+str(args.f2)+' Hz')
 
     # Days parameters
     date = date_n(args.yr,args.mth,args.day)
@@ -227,7 +237,7 @@ def main():
         
         #### DETECTE LES VALEURS >= threshold ####
         
-        indx=np.where((pvals>=args.thrhold)|(svals>=args.thrhold)))
+        indx=np.where((pvals>=args.thrhold)|(svals>=args.thrhold))
     
         h=[]
         timehr=np.arange(args.h1,args.h2,1,dtype=int)
@@ -249,7 +259,7 @@ def main():
         # Cutting out the segments with earthquakes
         hrout=np.unique(timehr[h])
         timehr=np.delete(timehr,h)
-        print(timehr) #Hours processed
+        logging.info(timehr) #Hours processed
         
         # Data file #####################
         path = "/Users/loispapin/Documents/Work/PNSN/"
@@ -266,11 +276,11 @@ def main():
                 cpttr+=1
             trace=stream[cpttr]
         except:
-            print('Probleme de premiere lecture du file')
-            print('A verifier si pb de channel ou autre')
+            logging.error('Probleme de premiere lecture du file')
+            logging.error('A verifier si pb de channel ou autre')
             name=args.net+'.'+args.sta+'..'+args.cha+'.'+day
             time_unv.append(name)
-            print('Break sur '+name)
+            logging.error('Break sur '+name)
             break
         
         stats         = trace.stats
@@ -288,7 +298,7 @@ def main():
             copy=trace.copy()
             copy.trim(starttime=starttimeout,endtime=endtimeout)
             trace_out.append(copy)
-            # print(trace_out)
+            # logging.info(trace_out)
         
         for ihour in timehr:
     
@@ -314,7 +324,7 @@ def main():
             if beg==None:
                 beg=starttimenew
             
-            print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
+            logging.info(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
         
             iid = "%(network)s.%(station)s..%(channel)s" % stats
             try: #Except for a XLMSyntaxError
@@ -439,18 +449,18 @@ def main():
     
     """
         This section plots the processed data and say something if no data was
-        calculated. This part stays as print but goes for logging in talapas.
+        calculated. This part stays as logging.info but goes for logging in talapas.
         
     """
     
     if newcurves is None:
-        print('No data to plot (see var newcurves)')
-        print('Name of the segments which the data were unavailable : '+str(time_unv))
+        logging.info('No data to plot (see var newcurves)')
+        logging.info('Name of the segments which the data were unavailable : '+str(time_unv))
     else:
-        print('Number of segments with earthquakes taking out : '+str(len(trace_out)))
-        print('Number of segments plotted : '+str((num*(h2-h1)-len(trace_out)))+' out of '+str(num*(h2-h1)))
+        logging.info('Number of segments with earthquakes taking out : '+str(len(trace_out)))
+        logging.info('Number of segments plotted : '+str((num*(h2-h1)-len(trace_out)))+' out of '+str(num*(h2-h1)))
         if time_unv!=[]:
-            print('Name of the segments which the data were unavailable : '+str(time_unv))
+            logging.info('Name of the segments which the data were unavailable : '+str(time_unv))
         
         # Changing column of 0 in nan for percentiles
         df=pd.DataFrame(newcurves)
@@ -492,8 +502,7 @@ def main():
         plt.ion()
         plt.savefig(f'{args.net}.{args.sta}.{args.cha}_fig.jpg',dpi=300, bbox_inches='tight')
         plt.show()
-    
-    return 0
+        return 0
 
 if __name__ == '__main__':
     main()
