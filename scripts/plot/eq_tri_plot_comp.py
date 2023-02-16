@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Feb 13 13:31:00 2023
+Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Fri Feb 15
+Last time checked on Thu Feb 16
 
 """
 
@@ -195,7 +196,7 @@ for iday in timeday:
     
     h=[]
     timehr=np.arange(h1,h2,1,dtype=int)
-    # Corresponding the times to the hour-segment
+    # Corresponding the times to the hour-segment (for 4 hours)
     for iindx in indx[0]:
         if iindx<=1*360000: #1st hour
             h.append(0)
@@ -382,9 +383,9 @@ for iday in timeday:
         curves=np.flip(curve)
         xedges=1.0/period_xedges
         x=np.linspace(min(xedges),max(xedges),sz)
-        plot=plt.plot(x,curves,c='lightgrey')
+        plot1=plt.plot(x,curves,c='lightgrey')
         
-        # Curves stock
+        # Curves stock for percentiles
         if iday==day1:
             cpthr=0
         else:
@@ -414,6 +415,7 @@ if newcurves is None:
     print('No data to plot (see var newcurves)')
     print('Name of the segments which the data were unavailable : '+str(time_unv))
 else:
+    print('----- PERIOD OF DATA -----')
     print('Number of segments with earthquakes taking out : '+str(len(trace_out)))
     print('Number of segments plotted : '+str((num*(h2-h1)-len(trace_out)))+' out of '+str(num*(h2-h1)))
     if time_unv!=[]:
@@ -476,16 +478,17 @@ timeday = np.arange(day,day+num,dtype=int)
 tmp=timeday
 timehr=np.arange(h1,h2,1,dtype=int)
 
-# Initialisation of the parameters
+# Initialisation of parameters
 beg=None #1st date
 cptday=0
 cpttrout=0
+cpttrout2=0
 
 for iday in timeday:
     
+    # Load the previous figure 
     fig2 = pickle.load(open('myplot.pickle','rb'))
-    ax2  = fig2.axes
-    ax2  = ax2[0]
+    ax2  = fig2.axes[0]
     
     if len(str(iday)) == 1:
         day = ('00' + str(iday))
@@ -636,49 +639,38 @@ for iday in timeday:
         current_times_used = used_times
         
         # Last calculated time (need for title)
-        end=endtimenew
+        end=starttimenew
         
-        # Creation of a plot representing the PPSD
-        sz=len(current_hist_stack) #Size=number of frequencies
-        b=np.flipud(np.transpose(current_hist_stack))
-        curve=np.zeros(sz)
-        # Creation of the curve
-        for ib in np.linspace(0,sz-1,sz):
-            indx=np.nonzero(b[:,int(ib)])
-            indx=int(indx[0])
-            val=db_bin_edges
-            val=val[::-1]
-            curve[int(ib)]=val[indx]
-        curves=np.flip(curve)
-        xedges=1.0/period_xedges
-        x=np.linspace(min(xedges),max(xedges),sz)
+        # Has the trace an eq ?
         for itrace in np.arange(len(trace_out)):
-            if trace.stats.station==trace_out[0].stats.station and trace.stats.starttime==trace_out[0].stats.starttime and trace.stats.endtime==trace_out[0].stats.endtime:
+            if trace.stats.station==trace_out[itrace].stats.station and trace.stats.starttime==trace_out[itrace].stats.starttime and trace.stats.endtime==trace_out[itrace].stats.endtime:
                 cpttrout+=1
-                continue
-            else:
-                ax2.plot(x,curves,'--r')
-        
-        # Curves stock
-        if iday==day1:
-            cpthr=0
+                cpttrout2=2
+
+        if cpttrout2==2: #Trace not plotted
+            cpttrout2=0
+            continue
         else:
-            cpthr=cptday*4
-        for itime in timehr:
-            if itime==ihour:
-                break
-            else:
-                cpthr+=1
-        if ihour==timehr[0] and iday==day1: #1st time
-            newcurves=np.zeros((sz,4*num))
-            newcurves[:,0]=curves
-        else:
-            newcurves[:,cpthr]=curves
+            # Creation of a plot representing the PPSD
+            sz=len(current_hist_stack) #Size=number of frequencies
+            b=np.flipud(np.transpose(current_hist_stack))
+            curve=np.zeros(sz)
+            # Creation of the curve 
+            for ib in np.linspace(0,sz-1,sz):
+                indx=np.nonzero(b[:,int(ib)])
+                indx=int(indx[0])
+                val=db_bin_edges
+                val=val[::-1]
+                curve[int(ib)]=val[indx]
+            curves=np.flip(curve)
+            xedges=1.0/period_xedges
+            x=np.linspace(min(xedges),max(xedges),sz)
+            plot2=ax2.plot(x,curves,'--r')
     
-    
-    dayt=str(end.day)
-    mtht=str(end.month)
-    yrt =str(end.year)
+    # Date for title and name of the fig
+    dayt = str(end.day)
+    mtht = str(end.month)
+    yrt  = str(end.year)
     if len(str(end.day))<2:
         dayt='0'+str(end.day)
     elif len(str(end.month))<2:
@@ -691,11 +683,12 @@ for iday in timeday:
     fig2.savefig(f'{net}.{sta}..{cha}_fig_.{yrt}{mtht}{dayt}.jpg', dpi=300, bbox_inches='tight')
     cptday+=1
 
-if newcurves is None:
+if plot2 is None:
     print('----- DAY OF COMPARISION -----')
     print('No data to plot (see var newcurves)')
     print('Name of the segments which the data were unavailable : '+str(time_unv))
 else:
+    print('----- DAY OF COMPARISION -----')
     print('Number of segments with earthquakes taking out : '+str(cpttrout))
     print('Number of segments plotted : '+str((num*(h2-h1)-cpttrout))+' out of '+str(num*(h2-h1)))
     if time_unv!=[]:
