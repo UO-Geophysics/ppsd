@@ -24,8 +24,8 @@ create files to replace the print, path to be modified
 import os
 import fcts
 import pickle
-import argparse
 import logging
+import argparse
 import datetime
 import unet_tools
 import numpy as np
