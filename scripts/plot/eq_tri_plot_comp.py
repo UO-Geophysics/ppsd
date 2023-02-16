@@ -479,7 +479,6 @@ tmp=timeday
 timehr=np.arange(h1,h2,1,dtype=int)
 
 # Initialisation of parameters
-beg=None #1st date
 cptday=0
 cpttrout=0
 cpttrout2=0
@@ -546,10 +545,6 @@ for iday in timeday:
             name=net+'.'+sta+'..'+cha+'.'+day
             time_unv.append(name)
             break
-        
-        # First calculated time (need for title)
-        if beg==None:
-            beg=starttimenew
         
         print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
     
@@ -684,11 +679,11 @@ for iday in timeday:
     cptday+=1
 
 if plot2 is None:
-    print('----- DAY OF COMPARISION -----')
+    print('----- DAY(S) OF COMPARISION -----')
     print('No data to plot (see var newcurves)')
     print('Name of the segments which the data were unavailable : '+str(time_unv))
 else:
-    print('----- DAY OF COMPARISION -----')
+    print('----- DAY(S) OF COMPARISION -----')
     print('Number of segments with earthquakes taking out : '+str(cpttrout))
     print('Number of segments plotted : '+str((num*(h2-h1)-cpttrout))+' out of '+str(num*(h2-h1)))
     if time_unv!=[]:
