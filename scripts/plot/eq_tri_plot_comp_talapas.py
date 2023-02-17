@@ -6,13 +6,14 @@ Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Thu Feb 16
+Last time checked on Fri Feb 17
 
 """
 
 import os
 import fcts
 import pickle
+import logging
 import argparse
 import datetime
 import unet_tools
@@ -53,10 +54,10 @@ def get_args():
     parse.add_argument('f1'      , type=int, help="First frequency for the range")
     parse.add_argument('f2'      , type=int, help="Last frequency for the range")
     parse.add_argument('thrhold' , type=float, help="Threshold for P and S waves picks")
-    parse.add_argument('yr2'      , type=int, help="Year of comparison")
-    parse.add_argument('mth2'     , type=int, help="Month of comparison")
-    parse.add_argument('day2'     , type=int, help="Day of comparison")
-    parse.add_argument('num2'     , type=int, help="Number of days of comparison")
+    parse.add_argument('yr2'     , type=int, help="Year of comparison")
+    parse.add_argument('mth2'    , type=int, help="Month of comparison")
+    parse.add_argument('day2'    , type=int, help="Day of comparison")
+    parse.add_argument('num2'    , type=int, help="Number of days of comparison")
     return parse.parse_args()
 
 """
@@ -64,12 +65,26 @@ def get_args():
     that will help with the building of the model and the use of an eq CNN.
     
 """
+
 def main():
+    
+    # To replace the print ### to adjust #####################
+    logging.basicConfig(
+            format='[%(levelname)s] %(asctime)s %(message)s',
+            datefmt='%m/%d/%Y %I:%M:%S %p',
+            level=logging.INFO,
+            handlers=[
+                logging.FileHandler("out.log"),
+                logging.StreamHandler()
+            ]
+    )
+    
     args = get_args()
-    print('----- DATA INFOS -----')
-    # print(str(args.mth)+'-'+str(args.day)+'-'+str(args.yr)+' + '+str(args.num)+' days')
-    # print('from '+str(args.h1)+' to '+str(args.h2)+' for '+args.net+'.'+args.sta)
-    # print('from '+str(args.f1)+' to '+str(args.f2)+' Hz')
+    ### A MODIFIER
+    logging.info('----- DATA INFOS -----')
+    logging.info(str(args.mth)+'-'+str(args.day)+'-'+str(args.yr)+' + '+str(args.num)+' days')
+    logging.info('from '+str(args.h1)+' to '+str(args.h2)+' for '+args.net+'.'+args.sta)
+    logging.info('from '+str(args.f1)+' to '+str(args.f2)+' Hz')
     
     # Days parameters
     date = date_n(args.yr,args.mth,args.day)
@@ -240,7 +255,7 @@ def main():
         # Cutting out the segments with earthquakes
         hrout=np.unique(timehr[h])
         timehr=np.delete(timehr,h)
-        print(timehr) #Hours processed
+        logging.info(timehr) #Hours processed
         
         # Data file
         path = "/Users/loispapin/Documents/Work/PNSN/"
@@ -257,11 +272,11 @@ def main():
                 cpttr+=1
             trace=stream[cpttr]
         except:
-            print('Probleme de premiere lecture du file')
-            print('A verifier si pb de channel ou autre')
+            logging.error('Probleme de premiere lecture du file')
+            logging.error('A verifier si pb de channel ou autre')
             name=args.net+'.'+args.sta+'..'+args.cha+'.'+day
             time_unv.append(name)
-            print('Break sur '+name)
+            logging.error('Break sur '+name)
             break
         
         stats         = trace.stats
@@ -279,7 +294,7 @@ def main():
             copy=trace.copy()
             copy.trim(starttime=starttimeout,endtime=endtimeout)
             trace_out.append(copy)
-            # print(trace_out)
+            # logging.info(trace_out)
         
         for ihour in timehr:
     
@@ -305,7 +320,7 @@ def main():
             if beg==None:
                 beg=starttimenew
             
-            print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
+            logging.info(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
         
             iid = "%(network)s.%(station)s..%(channel)s" % stats 
             try: #Except for a XLMSyntaxError
@@ -436,15 +451,15 @@ def main():
     endlast=end
     
     if plot1 is None:
-        print('----- PERIOD OF DATA -----')
-        print('No data to plot')
-        print('Name of some of the segments which the data were unavailable : '+str(time_unv))
+        logging.info('----- PERIOD OF DATA -----')
+        logging.info('No data to plot')
+        logging.info('Name of some of the segments which the data were unavailable : '+str(time_unv))
     else:
-        print('----- PERIOD OF DATA -----')
-        print('Number of segments with earthquakes taking out : '+str(len(trace_out)))
-        print('Number of segments plotted : '+str((args.num*(args.h2-args.h1)-len(trace_out)))+' out of '+str(args.num*(args.h2-args.h1)))
+        logging.info('----- PERIOD OF DATA -----')
+        logging.info('Number of segments with earthquakes taking out : '+str(len(trace_out)))
+        logging.info('Number of segments plotted : '+str((args.num*(args.h2-args.h1)-len(trace_out)))+' out of '+str(args.num*(args.h2-args.h1)))
         if time_unv!=[]:
-            print('Name of the segments which the data were unavailable : '+str(time_unv))
+            logging.info('Name of the segments which the data were unavailable : '+str(time_unv))
         
         # Changing column of 0 in nan for percentiles
         df=pd.DataFrame(newcurves)
@@ -537,11 +552,11 @@ def main():
                 cpttr+=1
             trace=stream[cpttr]
         except:
-            print('Probleme de premiere lecture du file')
-            print('A verifier si pb de channel ou autre')
+            logging.error('Probleme de premiere lecture du file')
+            logging.error('A verifier si pb de channel ou autre')
             name=args.net+'.'+args.sta+'..'+args.cha+'.'+day
             time_unv.append(name)
-            print('Break sur '+name)
+            logging.error('Break sur '+name)
             break
         
         stats         = trace.stats
@@ -572,7 +587,7 @@ def main():
                 time_unv.append(name)
                 break
             
-            print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
+            logging.info(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
         
             iid = "%(network)s.%(station)s..%(channel)s" % stats 
             try: #Except for a XLMSyntaxError
@@ -703,15 +718,15 @@ def main():
         cptday+=1
     
     if plot2 is None:
-        print('----- DAY(S) OF COMPARISON -----')
-        print('No data to plot')
-        print('Name of some of the segments which the data were unavailable : '+str(time_unv))
+        logging.info('----- DAY(S) OF COMPARISON -----')
+        logging.info('No data to plot')
+        logging.info('Name of some of the segments which the data were unavailable : '+str(time_unv))
     else:
-        print('----- DAY(S) OF COMPARISON -----')
-        print('Number of segments with earthquakes taking out : '+str(cpttrout))
-        print('Number of segments plotted : '+str((args.num*(args.h2-args.h1)-len(trace_out)))+' out of '+str(args.num*(args.h2-args.h1)))
+        logging.info('----- DAY(S) OF COMPARISON -----')
+        logging.info('Number of segments with earthquakes taking out : '+str(cpttrout))
+        logging.info('Number of segments plotted : '+str((args.num*(args.h2-args.h1)-len(trace_out)))+' out of '+str(args.num*(args.h2-args.h1)))
         if time_unv!=[]:
-            print('Name of the segments which the data were unavailable : '+str(time_unv))
+            logging.info('Name of the segments which the data were unavailable : '+str(time_unv))
     
     return 0
 

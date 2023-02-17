@@ -15,9 +15,7 @@ most likely an earthquake. Signals after that, are mostly (maybe only) composed
 of noise. Then PPSD computations are used on that new clean signal to study the 
 amplitude of a range of frequencies.
 
-Last time checked on Fri Feb 10
-
-Optimization process : calculating time of processing (import time)
+Last time checked on Fri Feb 17
 
 """
 

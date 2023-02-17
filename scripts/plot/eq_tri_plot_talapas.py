@@ -14,16 +14,18 @@ most likely an earthquake. Signals after that, are mostly (maybe only) composed
 of noise. Then PPSD computations are used on that new clean signal to study the 
 amplitude of a range of frequencies.
 
-Last time checked on Fri Feb 10
+Last time checked on Fri Feb 17
 
-Optimization process : calculating time of processing (import time),
-create files to replace the print, path to be modified
+Updates to do : need to verify that logging and argparse is working and use of
+the code on a terminal to see how it goes + modification of the paths when 
+using the calculator (also in the functions)
 
 """
 
 import os
 import fcts
 import pickle
+import logging
 import argparse
 import datetime
 import unet_tools
@@ -73,11 +75,23 @@ def get_args():
 """
 
 def main():
+    
+    # To replace the print ### to adjust #####################
+    logging.basicConfig(
+            format='[%(levelname)s] %(asctime)s %(message)s',
+            datefmt='%m/%d/%Y %I:%M:%S %p',
+            level=logging.INFO,
+            handlers=[
+                logging.FileHandler("out.log"),
+                logging.StreamHandler()
+            ]
+    )
+    
     args = get_args()
-    print(' #--DATA INFOS--# ')
-    print(str(args.mth)+'-'+str(args.day)+'-'+str(args.yr)+' + '+str(args.num)+' days')
-    print('from '+str(args.h1)+' to '+str(args.h2)+' for '+args.net+'.'+args.sta)
-    print('from '+str(args.f1)+' to '+str(args.f2)+' Hz')
+    logging.info(' #--DATA INFOS--# ')
+    logging.info(str(args.mth)+'-'+str(args.day)+'-'+str(args.yr)+' + '+str(args.num)+' days')
+    logging.info('from '+str(args.h1)+' to '+str(args.h2)+' for '+args.net+'.'+args.sta)
+    logging.info('from '+str(args.f1)+' to '+str(args.f2)+' Hz')
 
     # Days parameters
     date = date_n(args.yr,args.mth,args.day)
@@ -136,7 +150,7 @@ def main():
     # epsilon value shouldn't change
     epsilon = 1e-6
     
-    # SET MODEL FILE NAME    
+    # SET MODEL FILE NAME #####################
     model_save_file="unet_3comp_logfeat_b_eps_"+str(epos)+"_sr_"+str(sr)+"_std_"+str(std)+".tf"                  
     if large:
         fac=large
@@ -150,7 +164,7 @@ def main():
     else:
         model=unet_tools.make_large_unet_b(fac,sr,ncomps=3)  
     
-    # LOAD THE MODEL
+    # LOAD THE MODEL #####################
     model.load_weights("/Users/loispapin/Documents/Work/AI/"+model_save_file)  
     
     """
@@ -176,7 +190,8 @@ def main():
             day = ('0' + str(iday))
         elif len(str(iday)) == 3:
             day = (str(iday))
-            
+        
+        #####################
         D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/Users/loispapin/Documents/Work/PNSN/2015/Data/'
                                                          +args.sta+'/'+args.sta+'.'+args.net+'.2015.'+day, 'p_and_s')
         times=D_Z.times()
@@ -247,7 +262,7 @@ def main():
         # Cutting out the segments with earthquakes
         hrout=np.unique(timehr[h])
         timehr=np.delete(timehr,h)
-        print(timehr) #Hours processed
+        logging.info(timehr) #Hours processed
         
         # Data file #####################
         path = "/Users/loispapin/Documents/Work/PNSN/"
@@ -264,11 +279,11 @@ def main():
                 cpttr+=1
             trace=stream[cpttr]
         except:
-            print('Probleme de premiere lecture du file')
-            print('A verifier si pb de channel ou autre')
+            logging.error('Probleme de premiere lecture du file')
+            logging.error('A verifier si pb de channel ou autre')
             name=args.net+'.'+args.sta+'..'+args.cha+'.'+day
             time_unv.append(name)
-            print('Break sur '+name)
+            logging.error('Break sur '+name)
             break
         
         stats         = trace.stats
@@ -286,7 +301,7 @@ def main():
             copy=trace.copy()
             copy.trim(starttime=starttimeout,endtime=endtimeout)
             trace_out.append(copy)
-            # print(trace_out)
+            # logging.info(trace_out)
         
         for ihour in timehr:
     
@@ -312,7 +327,7 @@ def main():
             if beg==None:
                 beg=starttimenew
             
-            print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
+            logging.info(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
         
             iid = "%(network)s.%(station)s..%(channel)s" % stats
             try: #Except for a XLMSyntaxError
@@ -442,13 +457,13 @@ def main():
     """
     
     if newcurves is None:
-        print('No data to plot (see var newcurves)')
-        print('Name of the segments which the data were unavailable : '+str(time_unv))
+        logging.info('No data to plot (see var newcurves)')
+        logging.info('Name of the segments which the data were unavailable : '+str(time_unv))
     else:
-        print('Number of segments with earthquakes taking out : '+str(len(trace_out)))
-        print('Number of segments plotted : '+str((num*(args.h2-args.h1)-len(trace_out)))+' out of '+str(args.num*(args.h2-args.h1)))
+        logging.info('Number of segments with earthquakes taking out : '+str(len(trace_out)))
+        logging.info('Number of segments plotted : '+str((num*(args.h2-args.h1)-len(trace_out)))+' out of '+str(args.num*(args.h2-args.h1)))
         if time_unv!=[]:
-            print('Name of the segments which the data were unavailable : '+str(time_unv))
+            logging.info('Name of the segments which the data were unavailable : '+str(time_unv))
         
         # Changing column of 0 in nan for percentiles
         df=pd.DataFrame(newcurves)
