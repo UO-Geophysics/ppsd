@@ -48,10 +48,10 @@ client = Client("IRIS")
 """
 
 # Start of the data and how long
-date = date_n(2015,3,20)
+date = date_n(2015,12,18)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 20 #8 = 1 semaine
+num  = 1 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 tmp=timeday
 
@@ -81,7 +81,6 @@ period_limits = (1/f2,1/f1)
 grid=True
 period_lim=(f1,f2) 
 beg=None #1st date
-daynull=None
 cptday=0
 newcurves=None
 skip_on_gaps=False
@@ -469,3 +468,4 @@ else:
     plt.savefig(f'{net}.{sta}.{cha}_fig.jpg', dpi=300, bbox_inches='tight')
     plt.savefig('fig.jpg', dpi=300, bbox_inches='tight')
     plt.show()
+    
