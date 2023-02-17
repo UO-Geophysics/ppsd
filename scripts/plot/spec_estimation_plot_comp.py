@@ -39,10 +39,10 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2015,12,16)
+date = date_n(2015,1,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 16 #8 = 1 semaine
+num  = 5 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 tmp=timeday
 
@@ -51,7 +51,7 @@ hour1 = 20; hour2 = 24
 timehr=np.arange(hour1,hour2,1,dtype=int)
 
 # Nom du fichier
-sta = 'B009'
+sta = 'B926'
 net = 'PB'
 yr  = str(date.timetuple().tm_year)
 
@@ -61,7 +61,7 @@ ppsd_length                    = segm
 overlap                        = 0
 period_smoothing_width_octaves = 1.0
 period_step_octaves            = 0.0125
-db_bins                        = (-170, -90, 0.5)
+db_bins                        = (-160, -100, 0.5)
 
 # Calculation on 1-10Hz
 f1 = 1; f2 = 10; 
@@ -71,7 +71,6 @@ period_limits = (1/f2,1/f1)
 grid=True
 period_lim=(f1,f2) 
 beg=None #1st date
-daynull=None
 cptday=0
 skip_on_gaps=False
 
@@ -257,6 +256,11 @@ for iday in timeday:
             newcurves[:,cpthr]=curves
     cptday+=1
 
+if np.abs(end.datetime.hour-12)>12:
+    t='pm'
+else:
+    t='am'
+
 # 5th & 95th percentiles
 curve5 =np.zeros(sz)
 curve95=np.zeros(sz)
@@ -272,17 +276,20 @@ plt.plot(x,curve5,'b',x,curve95,'b')
 """
 
 # Start of the data and how long
-date = date_n(2015,12,16)
+date = date_n(2015,12,22)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 1 #8 = 1 semaine
+num  = 2 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 tmp=timeday
 
 # Initialisation of the parameters
 beg=None #1st date
-daynull=None
 cptday=0
+
+# Period of time for computations per segm
+hour1 = 20; hour2 = 24
+timehr=np.arange(hour1,hour2,1,dtype=int)
 
 for iday in timeday:
     
@@ -456,6 +463,14 @@ for iday in timeday:
             newcurves[:,cpthr]=curves
     cptday+=1
 
+# # 5th & 95th percentiles
+# curve5 =np.zeros(sz)
+# curve95=np.zeros(sz)
+# for ip in np.linspace(0,sz-1,sz):
+#     curve5[int(ip)] =np.nanpercentile(newcurves[int(ip)], 5)
+#     curve95[int(ip)]=np.nanpercentile(newcurves[int(ip)],95)
+
+# plt.plot(x,curve5,'b',x,curve95,'b')
 
 # Grid
 color = {"color": "0.7"}
@@ -472,11 +487,12 @@ ax.xaxis.set_major_formatter(FormatStrFormatter("%g")) #Pas de 10^
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
-title = "%s   %s--%s   (from %s to %s pm) \n day to compare : %s "
+### Probleme affichage heures title
+title = "%s   %s--%s   (from %s to %s %s) \n day to compare : %s "
 title = title % (iid,beg.date,(end-1).date,
                   np.abs(beg.datetime.hour-12),
                   np.abs(end.datetime.hour-12),
-                  date)
+                  t,date)
 ax.set_title(title)
 
 # Show the figure
