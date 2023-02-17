@@ -49,7 +49,7 @@ h1 = 20; h2 = 24
 timehr=np.arange(h1,h2,1,dtype=int)
 
 # Nom du fichier
-sta = 'B926'
+sta = 'B009'
 net = 'PB'
 cha = 'EHZ' 
 yr  = str(date.timetuple().tm_year)
@@ -70,12 +70,11 @@ period_limits = (1/f2,1/f1)
 grid=True
 period_lim=(f1,f2)
 beg=None #1st date
-daynull=None
 cptday=0
 newcurves=None
 skip_on_gaps=False
 time_error=[] #Erreur de connexion (except)
-hr_out=[]
+hrout=[]
 trace_out=[] #Trace with pvals or svals >= threshold
 time_unv=[] #Lack of data
 
@@ -212,7 +211,7 @@ for iday in timeday:
             continue
     
     # Cutting out the segments with earthquakes
-    hr_out=np.unique(timehr[h])
+    hrout=np.unique(timehr[h])
     timehr=np.delete(timehr,h)
     print(timehr) #Hours processed
     
@@ -247,7 +246,7 @@ for iday in timeday:
     sampling_rate = trace.stats.sampling_rate
     
     # Keeping the trace with supposed earthquakes in trace_out
-    for ihourout in hr_out:
+    for ihourout in hrout:
         starttimeout=starttime+(3600*ihourout)
         endtimeout=starttimeout+segm
         copy=trace.copy()
@@ -314,8 +313,6 @@ for iday in timeday:
     
         # Init
         times_processed = []
-        times_data      = []
-        times_gaps      = []
         binned_psds     = []
         current_times_used            = [] 
         current_times_all_details     = []
@@ -408,12 +405,13 @@ for iday in timeday:
     
 """
 
+# For title
 endlast=end
 
-if newcurves is None:
+if plot1 is None:
     print('----- PERIOD OF DATA -----')
-    print('No data to plot (see var newcurves)')
-    print('Name of the segments which the data were unavailable : '+str(time_unv))
+    print('No data to plot')
+    print('Name of some of the segments which the data were unavailable : '+str(time_unv))
 else:
     print('----- PERIOD OF DATA -----')
     print('Number of segments with earthquakes taking out : '+str(len(trace_out)))
@@ -581,8 +579,6 @@ for iday in timeday:
     
         # Init
         times_processed = []
-        times_data      = []
-        times_gaps      = []
         binned_psds     = []
         current_times_used            = [] 
         current_times_all_details     = []
@@ -679,11 +675,11 @@ for iday in timeday:
     cptday+=1
 
 if plot2 is None:
-    print('----- DAY(S) OF COMPARISION -----')
-    print('No data to plot (see var newcurves)')
-    print('Name of the segments which the data were unavailable : '+str(time_unv))
+    print('----- DAY(S) OF COMPARISON -----')
+    print('No data to plot')
+    print('Name of some of the segments which the data were unavailable : '+str(time_unv))
 else:
-    print('----- DAY(S) OF COMPARISION -----')
+    print('----- DAY(S) OF COMPARISON -----')
     print('Number of segments with earthquakes taking out : '+str(cpttrout))
     print('Number of segments plotted : '+str((num*(h2-h1)-cpttrout))+' out of '+str(num*(h2-h1)))
     if time_unv!=[]:
