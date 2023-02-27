@@ -112,92 +112,92 @@ def merge_method(skip_on_gaps):
     else:
         return 0
 
-def sanity_check(trace,iid,sampling_rate):
-    """
-    Checks if trace is compatible for use in the current PPSD instance.
-    Returns True if trace can be used or False if not.
+# def sanity_check(trace,iid,sampling_rate):
+#     """
+#     Checks if trace is compatible for use in the current PPSD instance.
+#     Returns True if trace can be used or False if not.
 
-    :type trace: :class:`~obspy.core.trace.Trace`
-    """
-    if trace.id != iid:
-        return False
-    if trace.stats.sampling_rate != sampling_rate:
-        return False
-    return True
+#     :type trace: :class:`~obspy.core.trace.Trace`
+#     """
+#     if trace.id != iid:
+#         return False
+#     if trace.stats.sampling_rate != sampling_rate:
+#         return False
+#     return True
 
-def check_time_present(times_processed, ppsd_length, overlap, utcdatetime):
-    """
-    Checks if the given UTCDateTime is already part of the current PPSD
-    instance. That is, checks if from utcdatetime to utcdatetime plus
-    ppsd_length there is already data in the PPSD.
-    Returns True if adding ppsd_length starting at the given time
-    would result in an overlap of the ppsd data base, False if it is OK to
-    insert this piece of data.
-    """
-    if not times_processed:
-        return False
-    # new data comes before existing data.
-    if utcdatetime._ns < times_processed[0]:
-        overlap_seconds = (
-            (utcdatetime._ns + ppsd_length * 1e9) -
-            times_processed[0]) / 1e9
-        # the new data is welcome if any overlap that would be introduced
-        # is less or equal than the overlap used by default on continuous
-        # data.
-        if overlap_seconds / ppsd_length > overlap:
-            return True
-        else:
-            return False
-    # new data exactly at start of first data segment
-    elif utcdatetime._ns == times_processed[0]:
-        return True
-    # new data comes after existing data.
-    elif utcdatetime._ns > times_processed[-1]:
-        overlap_seconds = (
-            (times_processed[-1] + ppsd_length * 1e9) -
-            utcdatetime._ns) / 1e9
-        # the new data is welcome if any overlap that would be introduced
-        # is less or equal than the overlap used by default on continuous
-        # data.
-        if overlap_seconds / ppsd_length > overlap:
-            return True
-        else:
-            return False
-    # new data exactly at start of last data segment
-    elif utcdatetime._ns == times_processed[-1]:
-        return True
-    # otherwise we are somewhere within the currently already present time
-    # range..
-    else:
-        index1 = bisect.bisect_left(times_processed,
-                                    utcdatetime._ns)
-        index2 = bisect.bisect_right(times_processed,
-                                     utcdatetime._ns)
-        # if bisect left/right gives same result, we are not exactly at one
-        # sampling point but in between to timestamps
-        if index1 == index2:
-            t1 = times_processed[index1 - 1]
-            t2 = times_processed[index1]
-            # check if we are overlapping on left side more than the normal
-            # overlap specified during init
-            overlap_seconds_left = (
-                (t1 + ppsd_length * 1e9) - utcdatetime._ns) / 1e9
-            # check if we are overlapping on right side more than the
-            # normal overlap specified during init
-            overlap_seconds_right = (
-                (utcdatetime._ns + ppsd_length * 1e9) - t2) / 1e9
-            max_overlap = max(overlap_seconds_left,
-                              overlap_seconds_right) / ppsd_length
-            if max_overlap > overlap:
-                return True
-            else:
-                return False
-        # if bisect left/right gives different results, we are at exactly
-        # one timestamp that is already present
-        else:
-            return True
-    raise NotImplementedError('This should not happen, please report on '
-                              'github.')
+# def check_time_present(times_processed, ppsd_length, overlap, utcdatetime):
+#     """
+#     Checks if the given UTCDateTime is already part of the current PPSD
+#     instance. That is, checks if from utcdatetime to utcdatetime plus
+#     ppsd_length there is already data in the PPSD.
+#     Returns True if adding ppsd_length starting at the given time
+#     would result in an overlap of the ppsd data base, False if it is OK to
+#     insert this piece of data.
+#     """
+#     if not times_processed:
+#         return False
+#     # new data comes before existing data.
+#     if utcdatetime._ns < times_processed[0]:
+#         overlap_seconds = (
+#             (utcdatetime._ns + ppsd_length * 1e9) -
+#             times_processed[0]) / 1e9
+#         # the new data is welcome if any overlap that would be introduced
+#         # is less or equal than the overlap used by default on continuous
+#         # data.
+#         if overlap_seconds / ppsd_length > overlap:
+#             return True
+#         else:
+#             return False
+#     # new data exactly at start of first data segment
+#     elif utcdatetime._ns == times_processed[0]:
+#         return True
+#     # new data comes after existing data.
+#     elif utcdatetime._ns > times_processed[-1]:
+#         overlap_seconds = (
+#             (times_processed[-1] + ppsd_length * 1e9) -
+#             utcdatetime._ns) / 1e9
+#         # the new data is welcome if any overlap that would be introduced
+#         # is less or equal than the overlap used by default on continuous
+#         # data.
+#         if overlap_seconds / ppsd_length > overlap:
+#             return True
+#         else:
+#             return False
+#     # new data exactly at start of last data segment
+#     elif utcdatetime._ns == times_processed[-1]:
+#         return True
+#     # otherwise we are somewhere within the currently already present time
+#     # range..
+#     else:
+#         index1 = bisect.bisect_left(times_processed,
+#                                     utcdatetime._ns)
+#         index2 = bisect.bisect_right(times_processed,
+#                                      utcdatetime._ns)
+#         # if bisect left/right gives same result, we are not exactly at one
+#         # sampling point but in between to timestamps
+#         if index1 == index2:
+#             t1 = times_processed[index1 - 1]
+#             t2 = times_processed[index1]
+#             # check if we are overlapping on left side more than the normal
+#             # overlap specified during init
+#             overlap_seconds_left = (
+#                 (t1 + ppsd_length * 1e9) - utcdatetime._ns) / 1e9
+#             # check if we are overlapping on right side more than the
+#             # normal overlap specified during init
+#             overlap_seconds_right = (
+#                 (utcdatetime._ns + ppsd_length * 1e9) - t2) / 1e9
+#             max_overlap = max(overlap_seconds_left,
+#                               overlap_seconds_right) / ppsd_length
+#             if max_overlap > overlap:
+#                 return True
+#             else:
+#                 return False
+#         # if bisect left/right gives different results, we are at exactly
+#         # one timestamp that is already present
+#         else:
+#             return True
+#     raise NotImplementedError('This should not happen, please report on '
+#                               'github.')
 
 def process(leng,nfft,sampling_rate,nlap,psd_periods,
             period_bin_left_edges,period_bin_right_edges,
@@ -265,12 +265,10 @@ def process(leng,nfft,sampling_rate,nlap,psd_periods,
     # Now get the amplitude response (squared)
     respamp = np.absolute(resp * np.conjugate(resp))
     # Make omega with the same conventions as spec
+    
     w = 2.0 * math.pi * _freq[1:]
     w = w[::-1]
     # Here we do the response removal
-    # if self.special_handling in ("hydrophone", "infrasound"):
-    #     spec = spec / respamp
-    # else:
     spec = (w ** 2) * spec / respamp
 
     # avoid calculating log of zero

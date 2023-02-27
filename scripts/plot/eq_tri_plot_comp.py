@@ -37,19 +37,18 @@ client = Client("IRIS")
 """
 
 # Start of the data and how long
-date = date_n(2015,1,1)
+date = date_n(2014,11,2)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 365 #8 = 1 semaine
+num  = 25 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
-tmp=timeday
 
 # Period of time for computations per segm
 h1 = 20; h2 = 24
 timehr=np.arange(h1,h2,1,dtype=int)
 
 # Nom du fichier
-sta = 'B009'
+sta = 'B926'
 net = 'PB'
 cha = 'EHZ' 
 yr  = str(date.timetuple().tm_year)
@@ -143,8 +142,8 @@ for iday in timeday:
     elif len(str(iday)) == 3:
         day = (str(iday))
         
-    D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/Users/loispapin/Documents/Work/PNSN/2015/Data/'
-                                                     +sta+'/'+sta+'.'+net+'.2015.'+day, 'p_and_s')
+    D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/Users/loispapin/Documents/Work/PNSN/2014/Data/'
+                                                     +sta+'/'+sta+'.'+net+'.2014.'+day, 'p_and_s')
     times=D_Z.times()
     t_start = D_Z.stats.starttime
     D_Z=D_Z.data
@@ -322,24 +321,16 @@ for iday in timeday:
         stream.merge(fcts.merge_method(skip_on_gaps),fill_value=0)
     
         # Read the all stream by the defined segments
-        for trace in stream:
-            if not fcts.sanity_check(trace,iid,sampling_rate):
-                continue
-            t1 = trace.stats.starttime
-            t2 = trace.stats.endtime
-            if t1 + ppsd_length - trace.stats.delta > t2:
-                continue
-            while t1 + ppsd_length - trace.stats.delta <= t2:
-                if fcts.check_time_present(times_processed,ppsd_length,overlap,t1):
-                    continue
-                else:
-                    slice = trace.slice(t1, t1 + ppsd_length -
-                                        trace.stats.delta)
-                    success = fcts.process(leng,nfft,sampling_rate,nlap,psd_periods,
-                                      period_bin_left_edges,period_bin_right_edges,
-                                      times_processed,binned_psds,
-                                      metadata,iid,trace=slice)
-                t1 += (1 - overlap) * ppsd_length  # advance
+        t1 = trace.stats.starttime
+        t2 = trace.stats.endtime
+        while t1 + ppsd_length - trace.stats.delta <= t2:
+            slice = trace.slice(t1, t1 + ppsd_length -
+                                trace.stats.delta)
+            success = process(leng,nfft,sampling_rate,nlap,psd_periods,
+                              period_bin_left_edges,period_bin_right_edges,
+                              times_processed,binned_psds,
+                              metadata,iid,trace=slice)
+            t1 += (1 - overlap) * ppsd_length  # advance
     
         # Calculation of the histogram used for the plots
         selected = fcts.stack_selection(current_times_all_details, times_processed,
@@ -350,8 +341,7 @@ for iday in timeday:
         num_period_bins = len(period_bin_centers)
         num_db_bins = len(db_bin_centers)
         
-        inds = np.hstack([binned_psds[i] for i in used_indices])
-        inds = db_bin_edges.searchsorted(inds, side="left") - 1
+        inds = db_bin_edges.searchsorted(np.hstack([binned_psds[i] for i in used_indices]), side="left") - 1
         inds[inds == -1] = 0
         inds[inds == num_db_bins] -= 1
         inds = inds.reshape((used_count, num_period_bins)).T
@@ -468,12 +458,11 @@ pickle.dump(fig, open('myplot.pickle', 'wb'))
 """
 
 # Start of the data and how long
-date = date_n(2015,12,16)
+date = date_n(2014,11,2)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 16 #8 = 1 semaine
+num  = 25 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
-tmp=timeday
 timehr=np.arange(h1,h2,1,dtype=int)
 
 # Initialisation of parameters

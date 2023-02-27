@@ -43,21 +43,20 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2015,12,1)
+date = date_n(2013,8,27)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 31 #8 = 1 semaine
+num  = 45 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
-tmp=timeday
 
 # Period of time for computations per segm
-hour1 = 20; hour2 = 24
+hour1 = 9; hour2 = 13;
 timehr=np.arange(hour1,hour2,1,dtype=int)
 
 # Nom du fichier
-sta = 'B926'
-net = 'PB'
-channel = 'EHZ'
+sta = 'DOSE'
+net = 'UW'
+cha = 'BHZ'
 yr  = str(date.timetuple().tm_year)
 
 # Parameters 
@@ -80,6 +79,7 @@ daynull=None
 cptday=0
 skip_on_gaps=False
 time_error=[]
+time_unv=[] #Lack of data
 
 # Create figure
 fig, ax = plt.subplots() 
@@ -102,14 +102,22 @@ for iday in timeday:
     filename = (path + yr + '/Data/' + sta + '/' + sta 
                 + '.' + net + '.' + yr + '.' + day)
     
-    # 1 day
-    stream = read(filename)
-    stream.merge(merge_method(skip_on_gaps),fill_value=0)
-    # Choix de la composante (channel)
-    cpttr=0
-    while stream[cpttr].stats.channel!=channel:
-        cpttr+=1
-    trace=stream[cpttr]
+    try: #if stream is empty or the wanted hours are missing
+        # 1 day 
+        stream = read(filename)
+        stream.merge(merge_method(skip_on_gaps),fill_value=0)
+        # Choix de la composante (channel)
+        cpttr=0
+        while stream[cpttr].stats.channel!=cha:
+            cpttr+=1
+        trace=stream[cpttr]
+    except:
+        print('Probleme de premiere lecture du file')
+        print('A verifier si pb de channel ou autre')
+        name=net+'.'+sta+'..'+cha+'.'+day
+        time_unv.append(name)
+        print('Break sur '+name)
+        break
     
     stats         = trace.stats
     network       = trace.stats.network
@@ -122,17 +130,22 @@ for iday in timeday:
     for ihour in timehr:
 
         # Cut of the data on choosen times
-        starttimenew = starttime+(3600*ihour)
+        starttimenew = starttime+(3600*(ihour+0.5))
         endtimenew   = starttimenew+segm
         
-        # 1 hour
-        stream = read(filename,starttime=starttimenew,endtime=endtimenew)
-        stream.merge(merge_method(skip_on_gaps),fill_value=0)
-        # Choix de la composante (channel)
-        cpttr=0
-        while stream[cpttr].stats.channel!=channel:
-            cpttr+=1
-        trace = stream[cpttr]
+        try: #if stream is empty or the wanted hours are missing
+            # 1 hour
+            stream = read(filename,starttime=starttimenew,endtime=endtimenew)
+            stream.merge(merge_method(skip_on_gaps),fill_value=0)
+            # Choix de la composante (channel)
+            cpttr=0
+            while stream[cpttr].stats.channel!=cha:
+                cpttr+=1
+            trace = stream[cpttr]
+        except:
+            name=net+'.'+sta+'..'+cha+'.'+day
+            time_unv.append(name)
+            break
         
         # First calculated time
         if beg==None:
@@ -182,29 +195,18 @@ for iday in timeday:
         # save information on available data and gaps
         times_data = insert_data_times(times_data,stream)
         times_gaps = insert_gap_times (times_gaps,stream)
-        # merge depending on skip_on_gaps
-        skip_on_gaps= False
-        stream.merge(merge_method(skip_on_gaps),fill_value=0)
-    
+        
         # Read the all stream by the defined segments
-        for trace in stream:
-            if not sanity_check(trace,iid,sampling_rate):
-                continue
-            t1 = trace.stats.starttime
-            t2 = trace.stats.endtime
-            if t1 + ppsd_length - trace.stats.delta > t2:
-                continue
-            while t1 + ppsd_length - trace.stats.delta <= t2:
-                if check_time_present(times_processed,ppsd_length,overlap,t1):
-                    continue
-                else:
-                    slice = trace.slice(t1, t1 + ppsd_length -
-                                        trace.stats.delta)
-                    success = process(leng,nfft,sampling_rate,nlap,psd_periods,
-                                      period_bin_left_edges,period_bin_right_edges,
-                                      times_processed,binned_psds,
-                                      metadata,iid,trace=slice)
-                t1 += (1 - overlap) * ppsd_length  # advance
+        t1 = trace.stats.starttime
+        t2 = trace.stats.endtime
+        while t1 + ppsd_length - trace.stats.delta <= t2:
+            slice = trace.slice(t1, t1 + ppsd_length -
+                                trace.stats.delta)
+            success = process(leng,nfft,sampling_rate,nlap,psd_periods,
+                              period_bin_left_edges,period_bin_right_edges,
+                              times_processed,binned_psds,
+                              metadata,iid,trace=slice)
+            t1 += (1 - overlap) * ppsd_length  # advance
     
         selected = stack_selection(current_times_all_details, times_processed,
                                    starttime=starttimenew, endtime=endtimenew)
@@ -214,8 +216,7 @@ for iday in timeday:
         num_period_bins = len(period_bin_centers)
         num_db_bins = len(db_bin_centers)
         
-        inds = np.hstack([binned_psds[i] for i in used_indices])
-        inds = db_bin_edges.searchsorted(inds, side="left") - 1
+        inds = db_bin_edges.searchsorted(np.hstack([binned_psds[i] for i in used_indices]), side="left") - 1
         inds[inds == -1] = 0
         inds[inds == num_db_bins] -= 1
         inds = inds.reshape((used_count, num_period_bins)).T

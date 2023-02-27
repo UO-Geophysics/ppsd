@@ -35,14 +35,14 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 ######################################################################
 
 # Start of the data and how long
-date = date_n(2015,4,1)
+date = date_n(2013,8,27)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 1 #8 = 1 semaine
+num  = 45 #8 = 1 semaine
 
 # Nom du fichier
-sta = 'B009'
-net = 'PB'
+sta = 'DOSE'
+net = 'UW'
 yr  = str(date.timetuple().tm_year)
 
 segm = 3600 #1h cut
@@ -73,8 +73,8 @@ for iday in np.arange(day,day+num,dtype=int):
     endtime       = trace.stats.endtime
     sampling_rate = trace.stats.sampling_rate
     
-    starttime = starttime+(3600*23)#+(27.05/60)))
-    endtime   = starttime+3600
+    starttime = starttime+(3600*9.5)#+(27.05/60)))
+    endtime   = starttime+(3600*4)
     trace=trace.trim(starttime=starttime,endtime=endtime)
     print(trace)
     trace.plot()
