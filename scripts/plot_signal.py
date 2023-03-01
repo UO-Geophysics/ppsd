@@ -6,6 +6,7 @@ Created on Tue Jan 10 11:17:35 2023
 @author: loispapin
 """
 
+import datetime
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
@@ -41,8 +42,9 @@ day1 = day
 num  = 45 #8 = 1 semaine
 
 # Nom du fichier
-sta = 'DOSE'
-net = 'UW'
+sta = 'GDR'
+net = 'CN'
+cha = 'EHZ'
 yr  = str(date.timetuple().tm_year)
 
 segm = 3600 #1h cut
@@ -57,14 +59,25 @@ for iday in np.arange(day,day+num,dtype=int):
     elif len(str(iday)) == 3:
         day = (str(iday))
 
-    # Mac
+    # Read the file
     path = "/Users/loispapin/Documents/Work/PNSN/"
-    filename = (path + yr + '/Data/' + sta + '/' + sta 
-                + '.' + net + '.' + yr + '.' + day)
+    if net=='PB' or net=='UW':
+        filename = (path + yr + '/Data/' + sta + '/' + sta 
+                    + '.' + net + '.' + yr + '.' + day)
+    elif net=='CN':
+        datebis=datetime.datetime(int(yr),1,1)+datetime.timedelta(days=int(iday-1))
+        mth = str(datebis.timetuple().tm_mon)
+        tod = str(datebis.timetuple().tm_mday)
+        if len(str(mth)) == 1:
+            mth = ('0' + str(mth))
+        if len(str(tod)) == 1:
+            tod = ('0' + str(tod))
+        filename = (path + yr + '/Data/' + sta + '/' + yr + mth + 
+                    tod + '.' + net + '.' + sta + '..' + cha + '.mseed')
     
     stream = read(filename)
     stream.merge(merge_method(skip_on_gaps),fill_value=0)
-    trace  = stream[2] #Composante Z
+    trace  = stream[0] #Composante Z
     stats         = trace.stats
     network       = trace.stats.network
     station       = trace.stats.station
