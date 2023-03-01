@@ -52,8 +52,8 @@ hour1 = 9; hour2 = 13;
 timehr=np.arange(hour1,hour2,1,dtype=int)
 
 # Nom du fichier
-sta = 'GDR'
-net = 'CN'
+sta = 'B926'
+net = 'PB'
 cha = 'EHZ'
 yr  = str(date.timetuple().tm_year)
 
@@ -303,6 +303,10 @@ if np.abs(end.datetime.hour-12)>=12:
 else:
     t='am'
 title = "%s   %s--%s   (from %s to %s %s) "
+########################
+# th1=beg.datetime.hour
+# th2=end.datetime.hour
+# if th1<
 title = title % (iid,beg.date,(end-1).date,
                   np.abs(beg.datetime.hour-12),
                   np.abs(end.datetime.hour-12),
