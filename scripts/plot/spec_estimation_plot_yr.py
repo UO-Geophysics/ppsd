@@ -9,7 +9,7 @@ This script does the same computation as the spec_estimation_yr.py but shows
 the results in a plot (curve) form and not in a probabilistic way. 
 Possibility to add the 5th & 95th percentile.
 
-Last time checked on Wed Mar  1
+Last time checked on Thu Mar  2
 
 """
 
@@ -52,9 +52,9 @@ hour1 = 9; hour2 = 13;
 timehr=np.arange(hour1,hour2,1,dtype=int)
 
 # Nom du fichier
-sta = 'B926'
-net = 'PB'
-cha = 'EHZ'
+sta = 'NTKA'
+net = 'CN'
+cha = 'HHZ'
 yr  = str(date.timetuple().tm_year)
 
 # Parameters 
@@ -100,7 +100,7 @@ for iday in timeday:
     if net=='PB' or net=='UW':
         filename = (path + yr + '/Data/' + sta + '/' + sta 
                     + '.' + net + '.' + yr + '.' + day)
-    elif net=='CN':
+    elif net=='CN' or net=='NTKA':
         datebis=datetime.datetime(int(yr),1,1)+datetime.timedelta(days=int(iday-1))
         mth = str(datebis.timetuple().tm_mon)
         tod = str(datebis.timetuple().tm_mday)
@@ -132,9 +132,10 @@ for iday in timeday:
     network       = trace.stats.network
     station       = trace.stats.station
     channel       = trace.stats.channel
-    starttime     = trace.stats.starttime
-    endtime       = trace.stats.endtime
     sampling_rate = trace.stats.sampling_rate
+
+    starttime     = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod)))
+    endtime       = starttime+((24*3600)-(1/sampling_rate))
     
     for ihour in timehr:
 
@@ -155,6 +156,9 @@ for iday in timeday:
         except:
             name=net+'.'+sta+'..'+cha+'.'+day
             time_unv.append(name)
+            break
+        
+        if len(trace)==0 or len(trace)<3600*sampling_rate:
             break
         
         # First calculated time
@@ -274,6 +278,12 @@ for iday in timeday:
         else:
             newcurves[:,cpthr]=curves
     cptday+=1
+
+
+# Changing column of 0 in nan for percentiles
+df=pd.DataFrame(newcurves)
+df.replace(0,np.nan,inplace=True)
+newcurves=df.to_numpy()
 
 # 5th & 95th percentiles
 curve5 =np.zeros(sz)
