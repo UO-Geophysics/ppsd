@@ -42,9 +42,9 @@ day1 = day
 num  = 45 #8 = 1 semaine
 
 # Nom du fichier
-sta = 'GDR'
+sta = 'NTKA'
 net = 'CN'
-cha = 'EHZ'
+cha = 'HHN'
 yr  = str(date.timetuple().tm_year)
 
 segm = 3600 #1h cut
@@ -64,7 +64,7 @@ for iday in np.arange(day,day+num,dtype=int):
     if net=='PB' or net=='UW':
         filename = (path + yr + '/Data/' + sta + '/' + sta 
                     + '.' + net + '.' + yr + '.' + day)
-    elif net=='CN':
+    elif net=='CN' or net=='NTKA':
         datebis=datetime.datetime(int(yr),1,1)+datetime.timedelta(days=int(iday-1))
         mth = str(datebis.timetuple().tm_mon)
         tod = str(datebis.timetuple().tm_mday)
@@ -82,9 +82,10 @@ for iday in np.arange(day,day+num,dtype=int):
     network       = trace.stats.network
     station       = trace.stats.station
     channel       = trace.stats.channel
-    starttime     = trace.stats.starttime
-    endtime       = trace.stats.endtime
     sampling_rate = trace.stats.sampling_rate
+
+    starttime     = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod)))
+    endtime       = starttime+((24*3600)-(1/sampling_rate))
     
     starttime = starttime+(3600*9.5)#+(27.05/60)))
     endtime   = starttime+(3600*4)
