@@ -9,7 +9,9 @@ This script does the same computation as the spec_estimation_yr.py but shows
 the results in a plot (curve) form and not in a probabilistic way. 
 Possibility to add the 5th & 95th percentile.
 
-Last time checked on Thu Mar  2
+Last time checked on Thu Mar  3
+
+Optimization : need to find a way to have proper hours in the title of the figures
 
 """
 
@@ -52,9 +54,9 @@ hour1 = 9; hour2 = 13;
 timehr=np.arange(hour1,hour2,1,dtype=int)
 
 # Nom du fichier
-sta = 'NTKA'
-net = 'CN'
-cha = 'HHZ'
+sta = 'B927'
+net = 'PB'
+cha = 'EHZ'
 yr  = str(date.timetuple().tm_year)
 
 # Parameters 
@@ -94,20 +96,20 @@ for iday in timeday:
         day = ('0' + str(iday))
     elif len(str(iday)) == 3:
         day = (str(iday))
+    datebis=datetime.datetime(int(yr),1,1)+datetime.timedelta(days=int(iday-1))
+    mth = str(datebis.timetuple().tm_mon)
+    tod = str(datebis.timetuple().tm_mday)
+    if len(str(mth)) == 1:
+        mth = ('0' + str(mth))
+    if len(str(tod)) == 1:
+        tod = ('0' + str(tod))
     
     # Read the file
     path = "/Users/loispapin/Documents/Work/PNSN/"
     if net=='PB' or net=='UW':
         filename = (path + yr + '/Data/' + sta + '/' + sta 
                     + '.' + net + '.' + yr + '.' + day)
-    elif net=='CN' or net=='NTKA':
-        datebis=datetime.datetime(int(yr),1,1)+datetime.timedelta(days=int(iday-1))
-        mth = str(datebis.timetuple().tm_mon)
-        tod = str(datebis.timetuple().tm_mday)
-        if len(str(mth)) == 1:
-            mth = ('0' + str(mth))
-        if len(str(tod)) == 1:
-            tod = ('0' + str(tod))
+    elif net=='CN':
         filename = (path + yr + '/Data/' + sta + '/' + yr + mth + 
                     tod + '.' + net + '.' + sta + '..' + cha + '.mseed')
     
@@ -131,16 +133,14 @@ for iday in timeday:
     stats         = trace.stats
     network       = trace.stats.network
     station       = trace.stats.station
-    channel       = trace.stats.channel
     sampling_rate = trace.stats.sampling_rate
-
-    starttime     = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod)))
-    endtime       = starttime+((24*3600)-(1/sampling_rate))
+    starttime     = trace.stats.starttime
+    endtime       = trace.stats.endtime
     
     for ihour in timehr:
 
         # Cut of the data on choosen times
-        starttimenew = starttime+(3600*(ihour+0.5))
+        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
         endtimenew   = starttimenew+segm
         
         try: #if stream is empty or the wanted hours are missing
