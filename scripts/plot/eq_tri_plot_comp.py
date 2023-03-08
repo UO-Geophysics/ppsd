@@ -459,6 +459,8 @@ if th2>12:
 title = "%s   %s--%s   (from %s to %s %s-%s) "
 title = title % (iid,beg.date,(end-1).date,
                   th1,th2,tth1,tth2)
+ax.set_title(title)
+
 
 # Show the figure
 plt.ion()
