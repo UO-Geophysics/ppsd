@@ -14,7 +14,7 @@ most likely an earthquake. Signals after that, are mostly (maybe only) composed
 of noise. Then PPSD computations are used on that new clean signal to study the 
 amplitude of a range of frequencies.
 
-Last time checked on Fri Feb 17
+Last time checked on Tue Mar  7
 
 Updates to do : need to verify that logging and argparse is working and use of
 the code on a terminal to see how it goes + modification of the paths when 
@@ -88,6 +88,7 @@ def main():
     )
     
     args = get_args()
+    ### A MODIFIER
     logging.info(' #--DATA INFOS--# ')
     logging.info(str(args.mth)+'-'+str(args.day)+'-'+str(args.yr)+' + '+str(args.num)+' days')
     logging.info('from '+str(args.h1)+' to '+str(args.h2)+' for '+args.net+'.'+args.sta)
@@ -190,6 +191,13 @@ def main():
             day = ('0' + str(iday))
         elif len(str(iday)) == 3:
             day = (str(iday))
+        datebis=datetime.datetime(int(args.yr),1,1)+datetime.timedelta(days=int(iday-1))
+        mth = str(datebis.timetuple().tm_mon)
+        tod = str(datebis.timetuple().tm_mday)
+        if len(str(mth)) == 1:
+            mth = ('0' + str(mth))
+        if len(str(tod)) == 1:
+            tod = ('0' + str(tod))
         
         #####################
         D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/Users/loispapin/Documents/Work/PNSN/2015/Data/'
@@ -264,10 +272,15 @@ def main():
         timehr=np.delete(timehr,h)
         logging.info(timehr) #Hours processed
         
-        # Data file #####################
+        
+        # Read the file #####################
         path = "/Users/loispapin/Documents/Work/PNSN/"
-        filename = (path + str(args.yr) + '/Data/' + args.sta + '/' + args.sta 
-                    + '.' + args.net + '.' + str(args.yr) + '.' + day)
+        if args.net=='PB' or args.net=='UW':
+            filename = (path + args.yr + '/Data/' + args.sta + '/' + args.sta 
+                        + '.' + args.net + '.' + args.yr + '.' + day)
+        elif args.net=='CN':
+            filename = (path + args.yr + '/Data/' + args.sta + '/' + args.yr + mth + 
+                        tod + '.' + args.net + '.' + args.sta + '..' + args.cha + '.mseed')
         
         try: #if stream is empty or the wanted hours are missing
             # 1 day 
@@ -289,7 +302,6 @@ def main():
         stats         = trace.stats
         network       = trace.stats.network
         station       = trace.stats.station
-        channel       = trace.stats.channel
         starttime     = trace.stats.starttime
         endtime       = trace.stats.endtime
         sampling_rate = trace.stats.sampling_rate
@@ -306,7 +318,7 @@ def main():
         for ihour in timehr:
     
             # Cut of the data on choosen times
-            starttimenew = starttime+(3600*ihour)
+            starttimenew = UTCDateTime(datetime.datetime(int(args.yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
             endtimenew   = starttimenew+segm
             
             try: #if stream is empty or the wanted hours are missing
@@ -323,6 +335,9 @@ def main():
                 time_unv.append(name)
                 break
             
+            if len(trace)==0 or len(trace)<3600*sampling_rate:
+                break
+            
             # First calculated time (need for title)
             if beg==None:
                 beg=starttimenew
@@ -330,7 +345,7 @@ def main():
             logging.info(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
         
             iid = "%(network)s.%(station)s..%(channel)s" % stats
-            try: #Except for a XLMSyntaxError
+            try: 
                 metadata = client.get_stations(network=network,station=station,
                                                starttime=starttimenew,endtime=endtimenew,level='response')
             except: #Keep the trace with error
@@ -368,29 +383,17 @@ def main():
             current_times_used            = [] 
             current_times_all_details     = []
             
-            # merge depending on skip_on_gaps
-            skip_on_gaps= False
-            stream.merge(fcts.merge_method(skip_on_gaps),fill_value=0)
-        
             # Read the all stream by the defined segments
-            for trace in stream:
-                if not fcts.sanity_check(trace,iid,sampling_rate):
-                    continue
-                t1 = trace.stats.starttime
-                t2 = trace.stats.endtime
-                if t1 + ppsd_length - trace.stats.delta > t2:
-                    continue
-                while t1 + ppsd_length - trace.stats.delta <= t2:
-                    if fcts.check_time_present(times_processed,ppsd_length,overlap,t1):
-                        continue
-                    else:
-                        slice = trace.slice(t1, t1 + ppsd_length -
-                                            trace.stats.delta)
-                        success = fcts.process(leng,nfft,sampling_rate,nlap,psd_periods,
-                                          period_bin_left_edges,period_bin_right_edges,
-                                          times_processed,binned_psds,
-                                          metadata,iid,trace=slice)
-                    t1 += (1 - overlap) * ppsd_length  # advance
+            t1 = trace.stats.starttime
+            t2 = trace.stats.endtime
+            while t1 + ppsd_length - trace.stats.delta <= t2:
+                slice = trace.slice(t1, t1 + ppsd_length -
+                                    trace.stats.delta)
+                success = fcts.process(leng,nfft,sampling_rate,nlap,psd_periods,
+                                  period_bin_left_edges,period_bin_right_edges,
+                                  times_processed,binned_psds,
+                                  metadata,iid,trace=slice)
+                t1 += (1 - overlap) * ppsd_length  # advance
         
             # Calculation of the histogram used for the plots
             selected = fcts.stack_selection(current_times_all_details, times_processed,
@@ -401,8 +404,7 @@ def main():
             num_period_bins = len(period_bin_centers)
             num_db_bins = len(db_bin_centers)
             
-            inds = np.hstack([binned_psds[i] for i in used_indices])
-            inds = db_bin_edges.searchsorted(inds, side="left") - 1
+            inds = db_bin_edges.searchsorted(np.hstack([binned_psds[i] for i in used_indices]), side="left") - 1
             inds[inds == -1] = 0
             inds[inds == num_db_bins] -= 1
             inds = inds.reshape((used_count, num_period_bins)).T
@@ -457,9 +459,11 @@ def main():
     """
     
     if newcurves is None:
+        logging.info('----- PERIOD OF DATA -----')
         logging.info('No data to plot (see var newcurves)')
         logging.info('Name of the segments which the data were unavailable : '+str(time_unv))
     else:
+        logging.info('----- PERIOD OF DATA -----')
         logging.info('Number of segments with earthquakes taking out : '+str(len(trace_out)))
         logging.info('Number of segments plotted : '+str((num*(args.h2-args.h1)-len(trace_out)))+' out of '+str(args.num*(args.h2-args.h1)))
         if time_unv!=[]:
@@ -496,6 +500,7 @@ def main():
             t='pm'
         else:
             t='am'
+        ########################
         title = "%s   %s--%s   (from %s to %s %s) "
         title = title % (iid,beg.date,(end-1).date,
                           np.abs(args.h1-12),np.abs(args.h2-12),t)

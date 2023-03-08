@@ -16,9 +16,7 @@ import math
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
-
 from matplotlib import mlab
-
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
 from obspy import UTCDateTime

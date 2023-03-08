@@ -6,7 +6,7 @@ Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Fri Feb 17
+Last time checked on Tue Mar  7
 
 """
 
@@ -37,10 +37,10 @@ client = Client("IRIS")
 """
 
 # Start of the data and how long
-date = date_n(2014,11,2)
+date = date_n(2015,1,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 25 #8 = 1 semaine
+num  = 365 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Period of time for computations per segm
@@ -141,6 +141,13 @@ for iday in timeday:
         day = ('0' + str(iday))
     elif len(str(iday)) == 3:
         day = (str(iday))
+    datebis=datetime.datetime(int(yr),1,1)+datetime.timedelta(days=int(iday-1))
+    mth = str(datebis.timetuple().tm_mon)
+    tod = str(datebis.timetuple().tm_mday)
+    if len(str(mth)) == 1:
+        mth = ('0' + str(mth))
+    if len(str(tod)) == 1:
+        tod = ('0' + str(tod))
         
     D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/Users/loispapin/Documents/Work/PNSN/2014/Data/'
                                                      +sta+'/'+sta+'.'+net+'.2014.'+day, 'p_and_s')
@@ -214,10 +221,14 @@ for iday in timeday:
     timehr=np.delete(timehr,h)
     print(timehr) #Hours processed
     
-    # Data file
+    # Read the file
     path = "/Users/loispapin/Documents/Work/PNSN/"
-    filename = (path + yr + '/Data/' + sta + '/' + sta 
-                + '.' + net + '.' + yr + '.' + day)
+    if net=='PB' or net=='UW':
+        filename = (path + yr + '/Data/' + sta + '/' + sta 
+                    + '.' + net + '.' + yr + '.' + day)
+    elif net=='CN':
+        filename = (path + yr + '/Data/' + sta + '/' + yr + mth + 
+                    tod + '.' + net + '.' + sta + '..' + cha + '.mseed')
     
     try: #if stream is empty or the wanted hours are missing
         # 1 day 
@@ -239,7 +250,6 @@ for iday in timeday:
     stats         = trace.stats
     network       = trace.stats.network
     station       = trace.stats.station
-    channel       = trace.stats.channel
     starttime     = trace.stats.starttime
     endtime       = trace.stats.endtime
     sampling_rate = trace.stats.sampling_rate
@@ -256,7 +266,7 @@ for iday in timeday:
     for ihour in timehr:
 
         # Cut of the data on choosen times
-        starttimenew = starttime+(3600*ihour)
+        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
         endtimenew   = starttimenew+segm
         
         try: #if stream is empty or the wanted hours are missing
@@ -273,6 +283,9 @@ for iday in timeday:
             time_unv.append(name)
             break
         
+        if len(trace)==0 or len(trace)<3600*sampling_rate:
+            break
+        
         # First calculated time (need for title)
         if beg==None:
             beg=starttimenew
@@ -280,10 +293,10 @@ for iday in timeday:
         print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
     
         iid = "%(network)s.%(station)s..%(channel)s" % stats 
-        try: #Except for a XLMSyntaxError
+        try: 
             metadata = client.get_stations(network=network,station=station,
                                            starttime=starttimenew,endtime=endtimenew,level='response')
-        except: #Keep the trace with error
+        except: 
             time_error.append(trace)
     
         # FFT calculations
@@ -316,17 +329,13 @@ for iday in timeday:
         current_times_used            = [] 
         current_times_all_details     = []
         
-        # merge depending on skip_on_gaps
-        skip_on_gaps= False
-        stream.merge(fcts.merge_method(skip_on_gaps),fill_value=0)
-    
         # Read the all stream by the defined segments
         t1 = trace.stats.starttime
         t2 = trace.stats.endtime
         while t1 + ppsd_length - trace.stats.delta <= t2:
             slice = trace.slice(t1, t1 + ppsd_length -
                                 trace.stats.delta)
-            success = process(leng,nfft,sampling_rate,nlap,psd_periods,
+            success = fcts.process(leng,nfft,sampling_rate,nlap,psd_periods,
                               period_bin_left_edges,period_bin_right_edges,
                               times_processed,binned_psds,
                               metadata,iid,trace=slice)
@@ -439,6 +448,7 @@ if (h1-12)<=12:
     t='pm'
 else:
     t='am'
+########################
 title = "%s   %s--%s   (from %s to %s %s)"
 title = title % (iid,beg.date,(end-1).date,
                   np.abs(h1-12),np.abs(h2-12),t)
@@ -458,10 +468,10 @@ pickle.dump(fig, open('myplot.pickle', 'wb'))
 """
 
 # Start of the data and how long
-date = date_n(2014,11,2)
+date = date_n(2015,12,12)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 25 #8 = 1 semaine
+num  = 1 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 timehr=np.arange(h1,h2,1,dtype=int)
 
@@ -469,6 +479,10 @@ timehr=np.arange(h1,h2,1,dtype=int)
 cptday=0
 cpttrout=0
 cpttrout2=0
+
+# # Period of time for computations per segm
+# h1 = 20; h2 = 24
+# timehr=np.arange(h1,h2,1,dtype=int)
 
 for iday in timeday:
     
@@ -482,11 +496,22 @@ for iday in timeday:
         day = ('0' + str(iday))
     elif len(str(iday)) == 3:
         day = (str(iday))
+    datebis=datetime.datetime(int(yr),1,1)+datetime.timedelta(days=int(iday-1))
+    mth = str(datebis.timetuple().tm_mon)
+    tod = str(datebis.timetuple().tm_mday)
+    if len(str(mth)) == 1:
+        mth = ('0' + str(mth))
+    if len(str(tod)) == 1:
+        tod = ('0' + str(tod))
 
-    # Data file
+    # Read the file
     path = "/Users/loispapin/Documents/Work/PNSN/"
-    filename = (path + yr + '/Data/' + sta + '/' + sta 
-                + '.' + net + '.' + yr + '.' + day)
+    if net=='PB' or net=='UW':
+        filename = (path + yr + '/Data/' + sta + '/' + sta 
+                    + '.' + net + '.' + yr + '.' + day)
+    elif net=='CN':
+        filename = (path + yr + '/Data/' + sta + '/' + yr + mth + 
+                    tod + '.' + net + '.' + sta + '..' + cha + '.mseed')
     
     try: #if stream is empty or the wanted hours are missing
         # 1 day 
@@ -508,7 +533,6 @@ for iday in timeday:
     stats         = trace.stats
     network       = trace.stats.network
     station       = trace.stats.station
-    channel       = trace.stats.channel
     starttime     = trace.stats.starttime
     endtime       = trace.stats.endtime
     sampling_rate = trace.stats.sampling_rate
@@ -516,7 +540,7 @@ for iday in timeday:
     for ihour in timehr:
 
         # Cut of the data on choosen times
-        starttimenew = starttime+(3600*ihour)
+        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
         endtimenew   = starttimenew+segm
         
         try: #if stream is empty or the wanted hours are missing
@@ -533,13 +557,16 @@ for iday in timeday:
             time_unv.append(name)
             break
         
+        if len(trace)==0 or len(trace)<3600*sampling_rate:
+            break
+        
         print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
     
         iid = "%(network)s.%(station)s..%(channel)s" % stats 
-        try: #Except for a XLMSyntaxError
+        try:
             metadata = client.get_stations(network=network,station=station,
                                            starttime=starttimenew,endtime=endtimenew,level='response')
-        except: #Keep the trace with error
+        except: 
             time_error.append(trace)
     
         # FFT calculations
@@ -572,29 +599,17 @@ for iday in timeday:
         current_times_used            = [] 
         current_times_all_details     = []
         
-        # merge depending on skip_on_gaps
-        skip_on_gaps= False
-        stream.merge(fcts.merge_method(skip_on_gaps),fill_value=0)
-    
         # Read the all stream by the defined segments
-        for trace in stream:
-            if not fcts.sanity_check(trace,iid,sampling_rate):
-                continue
-            t1 = trace.stats.starttime
-            t2 = trace.stats.endtime
-            if t1 + ppsd_length - trace.stats.delta > t2:
-                continue
-            while t1 + ppsd_length - trace.stats.delta <= t2:
-                if fcts.check_time_present(times_processed,ppsd_length,overlap,t1):
-                    continue
-                else:
-                    slice = trace.slice(t1, t1 + ppsd_length -
-                                        trace.stats.delta)
-                    success = fcts.process(leng,nfft,sampling_rate,nlap,psd_periods,
-                                      period_bin_left_edges,period_bin_right_edges,
-                                      times_processed,binned_psds,
-                                      metadata,iid,trace=slice)
-                t1 += (1 - overlap) * ppsd_length  # advance
+        t1 = trace.stats.starttime
+        t2 = trace.stats.endtime
+        while t1 + ppsd_length - trace.stats.delta <= t2:
+            slice = trace.slice(t1, t1 + ppsd_length -
+                                trace.stats.delta)
+            success = fcts.process(leng,nfft,sampling_rate,nlap,psd_periods,
+                              period_bin_left_edges,period_bin_right_edges,
+                              times_processed,binned_psds,
+                              metadata,iid,trace=slice)
+            t1 += (1 - overlap) * ppsd_length  # advance
     
         # Calculation of the histogram used for the plots
         selected = fcts.stack_selection(current_times_all_details, times_processed,
@@ -605,8 +620,7 @@ for iday in timeday:
         num_period_bins = len(period_bin_centers)
         num_db_bins = len(db_bin_centers)
         
-        inds = np.hstack([binned_psds[i] for i in used_indices])
-        inds = db_bin_edges.searchsorted(inds, side="left") - 1
+        inds = db_bin_edges.searchsorted(np.hstack([binned_psds[i] for i in used_indices]), side="left") - 1
         inds[inds == -1] = 0
         inds[inds == num_db_bins] -= 1
         inds = inds.reshape((used_count, num_period_bins)).T
@@ -655,7 +669,7 @@ for iday in timeday:
         dayt='0'+str(end.day)
     elif len(str(end.month))<2:
         mtht='0'+str(end.month)
-
+    ########################
     title = "%s   %s--%s   (from %s to %s %s) \n day to compare : %s-%s-%s"
     title = title % (iid,beg.date,(endlast-1).date,
                       np.abs(h1-12),np.abs(h2-12),t,yrt,mtht,dayt)

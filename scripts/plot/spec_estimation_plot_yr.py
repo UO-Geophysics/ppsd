@@ -7,9 +7,9 @@ Update  on Wed Jan 24
 
 This script does the same computation as the spec_estimation_yr.py but shows
 the results in a plot (curve) form and not in a probabilistic way. 
-Possibility to add the 5th & 95th percentile.
+Possibility to add the 5th & 95th percentiles.
 
-Last time checked on Thu Mar  3
+Last time checked on Tue Mar  7
 
 Optimization : need to find a way to have proper hours in the title of the figures
 
@@ -33,8 +33,6 @@ client = Client("IRIS")
 # Functions called in this script #Mac & Windows
 runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
         wdir='/Users/loispapin/Documents/Work/PNSN')
-# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
-#         wdir='C:/Users/papin/Documents/Spec')
 
 """
     Read the data with the function read of the Obspy module. Identify the 
@@ -43,18 +41,18 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2013,8,27)
+date = date_n(2015,1,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 45 #8 = 1 semaine
+num  = 365 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Period of time for computations per segm
-hour1 = 9; hour2 = 13;
-timehr=np.arange(hour1,hour2,1,dtype=int)
+h2 = 20; h1 = 24;
+timehr=np.arange(h1,h1,1,dtype=int)
 
 # Nom du fichier
-sta = 'B927'
+sta = 'B926'
 net = 'PB'
 cha = 'EHZ'
 yr  = str(date.timetuple().tm_year)
@@ -279,7 +277,6 @@ for iday in timeday:
             newcurves[:,cpthr]=curves
     cptday+=1
 
-
 # Changing column of 0 in nan for percentiles
 df=pd.DataFrame(newcurves)
 df.replace(0,np.nan,inplace=True)
@@ -302,7 +299,6 @@ ax.grid(True, which="minor", **color)
 # Axis and title
 ax.set_xlabel('Frequency [Hz]')
 ax.invert_xaxis()
-# ax.set_xscale('log')
 ax.set_xlim(period_lim)
 
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
@@ -317,6 +313,7 @@ title = "%s   %s--%s   (from %s to %s %s) "
 # th1=beg.datetime.hour
 # th2=end.datetime.hour
 # if th1<
+########################
 title = title % (iid,beg.date,(end-1).date,
                   np.abs(beg.datetime.hour-12),
                   np.abs(end.datetime.hour-12),

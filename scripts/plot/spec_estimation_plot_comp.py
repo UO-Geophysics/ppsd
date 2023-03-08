@@ -8,7 +8,10 @@ Update  on Wed Jan 24
 This script does the same computation as the spec_estimation.py but shows
 the results in a plot (curve) form and not in a probabilistic way.
 
-Last time checked on Wed Jan 24
+Last time checked on Tue Mar  7
+
+Optimization : need to find a way to have proper hours in the title of the figures
+
 """
 
 import os
@@ -26,11 +29,8 @@ from obspy.signal.util import prev_pow_2
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
-# Functions called in this script #Mac & Windows
 runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
         wdir='/Users/loispapin/Documents/Work/PNSN')
-# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
-#         wdir='C:/Users/papin/Documents/Spec')
 
 """
     Read the data with the function read of the Obspy module. Identify the 
@@ -42,17 +42,17 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 date = date_n(2015,1,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 5 #8 = 1 semaine
+num  = 365 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
-tmp=timeday
 
 # Period of time for computations per segm
-hour1 = 20; hour2 = 24
-timehr=np.arange(hour1,hour2,1,dtype=int)
+h1 = 20; h2 = 24
+timehr=np.arange(h1,h2,1,dtype=int)
 
 # Nom du fichier
 sta = 'B926'
 net = 'PB'
+cha = 'EHZ'
 yr  = str(date.timetuple().tm_year)
 
 # Parameters 
@@ -61,7 +61,7 @@ ppsd_length                    = segm
 overlap                        = 0
 period_smoothing_width_octaves = 1.0
 period_step_octaves            = 0.0125
-db_bins                        = (-160, -100, 0.5)
+db_bins                        = (-170, -110, 0.5)
 
 # Calculation on 1-10Hz
 f1 = 1; f2 = 10; 
@@ -73,6 +73,8 @@ period_lim=(f1,f2)
 beg=None #1st date
 cptday=0
 skip_on_gaps=False
+time_error=[]
+time_unv=[] #Lack of data
 
 # Create figure
 fig, ax = plt.subplots() 
@@ -89,44 +91,70 @@ for iday in timeday:
         day = ('0' + str(iday))
     elif len(str(iday)) == 3:
         day = (str(iday))
-
-    # Mac
+    datebis=datetime.datetime(int(yr),1,1)+datetime.timedelta(days=int(iday-1))
+    mth = str(datebis.timetuple().tm_mon)
+    tod = str(datebis.timetuple().tm_mday)
+    if len(str(mth)) == 1:
+        mth = ('0' + str(mth))
+    if len(str(tod)) == 1:
+        tod = ('0' + str(tod))
+    
+    # Read the file
     path = "/Users/loispapin/Documents/Work/PNSN/"
-    filename = (path + yr + '/Data/' + sta + '/' + sta 
-                + '.' + net + '.' + yr + '.' + day)
-
-    # # Windows
-    # path = r"C:\Users\papin\Documents\Spec\Data"
-    # filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
+    if net=='PB' or net=='UW':
+        filename = (path + yr + '/Data/' + sta + '/' + sta 
+                    + '.' + net + '.' + yr + '.' + day)
+    elif net=='CN':
+        filename = (path + yr + '/Data/' + sta + '/' + yr + mth + 
+                    tod + '.' + net + '.' + sta + '..' + cha + '.mseed')
     
-    # 1 day
-    stream = read(filename)
-    stream.merge(merge_method(skip_on_gaps),fill_value=0)
-    
-    if len(stream)==3:
-        nb=2
-    elif len(stream)==1:
-        nb=0
-        
-    trace  = stream[nb] #Composante Z
+    try: #if stream is empty or the wanted hours are missing
+        # 1 day 
+        stream = read(filename)
+        stream.merge(merge_method(skip_on_gaps),fill_value=0)
+        # Choix de la composante (channel)
+        cpttr=0
+        while stream[cpttr].stats.channel!=cha:
+            cpttr+=1
+        trace=stream[cpttr]
+    except:
+        print('Probleme de premiere lecture du file')
+        print('A verifier si pb de channel ou autre')
+        name=net+'.'+sta+'..'+cha+'.'+day
+        time_unv.append(name)
+        print('Break sur '+name)
+        break
     
     stats         = trace.stats
     network       = trace.stats.network
     station       = trace.stats.station
-    channel       = trace.stats.channel
+    sampling_rate = trace.stats.sampling_rate
     starttime     = trace.stats.starttime
     endtime       = trace.stats.endtime
-    sampling_rate = trace.stats.sampling_rate
     
     for ihour in timehr:
 
         # Cut of the data on choosen times
-        starttimenew = starttime+(3600*ihour)
+        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
         endtimenew   = starttimenew+segm
         
-        ## Try
-        stream = read(filename,starttime=starttimenew,endtime=endtimenew)
-        trace  = stream[nb] #Composante Z
+        try: #if stream is empty or the wanted hours are missing
+            # 1 day 
+            stream = read(filename)
+            stream.merge(merge_method(skip_on_gaps),fill_value=0)
+            # Choix de la composante (channel)
+            cpttr=0
+            while stream[cpttr].stats.channel!=cha:
+                cpttr+=1
+            trace = stream[cpttr]
+            trace=trace.trim(starttime=starttimenew,endtime=endtimenew)
+        except:
+            name=net+'.'+sta+'..'+cha+'.'+day
+            time_unv.append(name)
+            break
+        
+        if len(trace)==0 or len(trace)<3600*sampling_rate:
+            break
         
         # First calculated time
         if beg==None:
@@ -135,8 +163,11 @@ for iday in timeday:
         print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
     
         iid = "%(network)s.%(station)s.%(location)s.%(channel)s" % stats
-        metadata = client.get_stations(network=network,station=station,
-                                       starttime=starttimenew,endtime=endtimenew,level='response')
+        try:
+            metadata = client.get_stations(network=network,station=station,
+                                           starttime=starttimenew,endtime=endtimenew,level='response')
+        except:
+            time_error.append(trace)
     
         # FFT calculations
         nfft=prev_pow_2((ppsd_length*sampling_rate)/4.0) 
@@ -167,37 +198,24 @@ for iday in timeday:
         times_data      = []
         times_gaps      = []
         binned_psds     = []
-        current_hist_stack            = None
-        current_hist_stack_cumulative = None
         current_times_used            = [] 
         current_times_all_details     = []
     
         # save information on available data and gaps
         times_data = insert_data_times(times_data,stream)
         times_gaps = insert_gap_times (times_gaps,stream)
-        # merge depending on skip_on_gaps
-        skip_on_gaps= False
-        stream.merge(merge_method(skip_on_gaps),fill_value=0)
-    
+        
         # Read the all stream by the defined segments
-        for trace in stream:
-            if not sanity_check(trace,iid,sampling_rate):
-                continue
-            t1 = trace.stats.starttime
-            t2 = trace.stats.endtime
-            if t1 + ppsd_length - trace.stats.delta > t2:
-                continue
-            while t1 + ppsd_length - trace.stats.delta <= t2:
-                if check_time_present(times_processed,ppsd_length,overlap,t1):
-                    continue
-                else:
-                    slice = trace.slice(t1, t1 + ppsd_length -
-                                        trace.stats.delta)
-                    success = process(leng,nfft,sampling_rate,nlap,psd_periods,
-                                      period_bin_left_edges,period_bin_right_edges,
-                                      times_processed,binned_psds,
-                                      metadata,iid,trace=slice)
-                t1 += (1 - overlap) * ppsd_length  # advance
+        t1 = trace.stats.starttime
+        t2 = trace.stats.endtime
+        while t1 + ppsd_length - trace.stats.delta <= t2:
+            slice = trace.slice(t1, t1 + ppsd_length -
+                                trace.stats.delta)
+            success = process(leng,nfft,sampling_rate,nlap,psd_periods,
+                              period_bin_left_edges,period_bin_right_edges,
+                              times_processed,binned_psds,
+                              metadata,iid,trace=slice)
+            t1 += (1 - overlap) * ppsd_length  # advance
     
         selected = stack_selection(current_times_all_details, times_processed,
                                    starttime=starttimenew, endtime=endtimenew)
@@ -256,10 +274,10 @@ for iday in timeday:
             newcurves[:,cpthr]=curves
     cptday+=1
 
-if np.abs(end.datetime.hour-12)>12:
-    t='pm'
-else:
-    t='am'
+# Changing column of 0 in nan for percentiles
+df=pd.DataFrame(newcurves)
+df.replace(0,np.nan,inplace=True)
+newcurves=df.to_numpy()
 
 # 5th & 95th percentiles
 curve5 =np.zeros(sz)
@@ -276,20 +294,19 @@ plt.plot(x,curve5,'b',x,curve95,'b')
 """
 
 # Start of the data and how long
-date = date_n(2015,12,22)
+date = date_n(2015,12,12)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 2 #8 = 1 semaine
+num  = 1 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
-tmp=timeday
 
 # Initialisation of the parameters
 beg=None #1st date
 cptday=0
 
 # Period of time for computations per segm
-hour1 = 20; hour2 = 24
-timehr=np.arange(hour1,hour2,1,dtype=int)
+h1 = 20; h2 = 24
+timehr=np.arange(h1,h2,1,dtype=int)
 
 for iday in timeday:
     
@@ -299,44 +316,70 @@ for iday in timeday:
         day = ('0' + str(iday))
     elif len(str(iday)) == 3:
         day = (str(iday))
-
-    # Mac
+    datebis=datetime.datetime(int(yr),1,1)+datetime.timedelta(days=int(iday-1))
+    mth = str(datebis.timetuple().tm_mon)
+    tod = str(datebis.timetuple().tm_mday)
+    if len(str(mth)) == 1:
+        mth = ('0' + str(mth))
+    if len(str(tod)) == 1:
+        tod = ('0' + str(tod))
+    
+    # Read the file
     path = "/Users/loispapin/Documents/Work/PNSN/"
-    filename = (path + yr + '/Data/' + sta + '/' + sta 
-                + '.' + net + '.' + yr + '.' + day)
-
-    # # Windows
-    # path = r"C:\Users\papin\Documents\Spec\Data"
-    # filename = (path + "\\" + sta + "\\" + sta + '.' + net + '.' + yr + '.' + day)
+    if net=='PB' or net=='UW':
+        filename = (path + yr + '/Data/' + sta + '/' + sta 
+                    + '.' + net + '.' + yr + '.' + day)
+    elif net=='CN':
+        filename = (path + yr + '/Data/' + sta + '/' + yr + mth + 
+                    tod + '.' + net + '.' + sta + '..' + cha + '.mseed')
     
-    # 1 day
-    stream = read(filename)
-    stream.merge(merge_method(skip_on_gaps),fill_value=0)
-    
-    if len(stream)==3:
-        nb=2
-    elif len(stream)==1:
-        nb=0
-        
-    trace  = stream[nb] #Composante Z
+    try: #if stream is empty or the wanted hours are missing
+        # 1 day 
+        stream = read(filename)
+        stream.merge(merge_method(skip_on_gaps),fill_value=0)
+        # Choix de la composante (channel)
+        cpttr=0
+        while stream[cpttr].stats.channel!=cha:
+            cpttr+=1
+        trace=stream[cpttr]
+    except:
+        print('Probleme de premiere lecture du file')
+        print('A verifier si pb de channel ou autre')
+        name=net+'.'+sta+'..'+cha+'.'+day
+        time_unv.append(name)
+        print('Break sur '+name)
+        break
     
     stats         = trace.stats
     network       = trace.stats.network
     station       = trace.stats.station
-    channel       = trace.stats.channel
+    sampling_rate = trace.stats.sampling_rate
     starttime     = trace.stats.starttime
     endtime       = trace.stats.endtime
-    sampling_rate = trace.stats.sampling_rate
     
     for ihour in timehr:
 
         # Cut of the data on choosen times
-        starttimenew = starttime+(3600*ihour)
+        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
         endtimenew   = starttimenew+segm
         
-        ## Try
-        stream = read(filename,starttime=starttimenew,endtime=endtimenew)
-        trace  = stream[nb] #Composante Z
+        try: #if stream is empty or the wanted hours are missing
+            # 1 day 
+            stream = read(filename)
+            stream.merge(merge_method(skip_on_gaps),fill_value=0)
+            # Choix de la composante (channel)
+            cpttr=0
+            while stream[cpttr].stats.channel!=cha:
+                cpttr+=1
+            trace = stream[cpttr]
+            trace=trace.trim(starttime=starttimenew,endtime=endtimenew)
+        except:
+            name=net+'.'+sta+'..'+cha+'.'+day
+            time_unv.append(name)
+            break
+        
+        if len(trace)==0 or len(trace)<3600*sampling_rate:
+            break
         
         # First calculated time
         if beg==None:
@@ -345,9 +388,12 @@ for iday in timeday:
         print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
     
         iid = "%(network)s.%(station)s.%(location)s.%(channel)s" % stats
-        metadata = client.get_stations(network=network,station=station,
-                                       starttime=starttimenew,endtime=endtimenew,level='response')
-    
+        try:
+            metadata = client.get_stations(network=network,station=station,
+                                           starttime=starttimenew,endtime=endtimenew,level='response')
+        except:
+            time_error.append(trace)
+        
         # FFT calculations
         nfft=prev_pow_2((ppsd_length*sampling_rate)/4.0) 
         nlap=int(0.75*nfft)            
@@ -377,37 +423,24 @@ for iday in timeday:
         times_data      = []
         times_gaps      = []
         binned_psds     = []
-        current_hist_stack            = None
-        current_hist_stack_cumulative = None
         current_times_used            = [] 
         current_times_all_details     = []
     
         # save information on available data and gaps
         times_data = insert_data_times(times_data,stream)
         times_gaps = insert_gap_times (times_gaps,stream)
-        # merge depending on skip_on_gaps
-        skip_on_gaps= False
-        stream.merge(merge_method(skip_on_gaps),fill_value=0)
-    
+        
         # Read the all stream by the defined segments
-        for trace in stream:
-            if not sanity_check(trace,iid,sampling_rate):
-                continue
-            t1 = trace.stats.starttime
-            t2 = trace.stats.endtime
-            if t1 + ppsd_length - trace.stats.delta > t2:
-                continue
-            while t1 + ppsd_length - trace.stats.delta <= t2:
-                if check_time_present(times_processed,ppsd_length,overlap,t1):
-                    continue
-                else:
-                    slice = trace.slice(t1, t1 + ppsd_length -
-                                        trace.stats.delta)
-                    success = process(leng,nfft,sampling_rate,nlap,psd_periods,
-                                      period_bin_left_edges,period_bin_right_edges,
-                                      times_processed,binned_psds,
-                                      metadata,iid,trace=slice)
-                t1 += (1 - overlap) * ppsd_length  # advance
+        t1 = trace.stats.starttime
+        t2 = trace.stats.endtime
+        while t1 + ppsd_length - trace.stats.delta <= t2:
+            slice = trace.slice(t1, t1 + ppsd_length -
+                                trace.stats.delta)
+            success = process(leng,nfft,sampling_rate,nlap,psd_periods,
+                              period_bin_left_edges,period_bin_right_edges,
+                              times_processed,binned_psds,
+                              metadata,iid,trace=slice)
+            t1 += (1 - overlap) * ppsd_length  # advance
     
         selected = stack_selection(current_times_all_details, times_processed,
                                    starttime=starttimenew, endtime=endtimenew)
@@ -417,8 +450,7 @@ for iday in timeday:
         num_period_bins = len(period_bin_centers)
         num_db_bins = len(db_bin_centers)
         
-        inds = np.hstack([binned_psds[i] for i in used_indices])
-        inds = db_bin_edges.searchsorted(inds, side="left") - 1
+        inds = db_bin_edges.searchsorted(np.hstack([binned_psds[i] for i in used_indices]), side="left") - 1
         inds[inds == -1] = 0
         inds[inds == num_db_bins] -= 1
         inds = inds.reshape((used_count, num_period_bins)).T
@@ -463,15 +495,6 @@ for iday in timeday:
             newcurves[:,cpthr]=curves
     cptday+=1
 
-# # 5th & 95th percentiles
-# curve5 =np.zeros(sz)
-# curve95=np.zeros(sz)
-# for ip in np.linspace(0,sz-1,sz):
-#     curve5[int(ip)] =np.nanpercentile(newcurves[int(ip)], 5)
-#     curve95[int(ip)]=np.nanpercentile(newcurves[int(ip)],95)
-
-# plt.plot(x,curve5,'b',x,curve95,'b')
-
 # Grid
 color = {"color": "0.7"}
 ax.grid(True, which="major", **color)
@@ -480,14 +503,17 @@ ax.grid(True, which="minor", **color)
 # Axis and title
 ax.set_xlabel('Frequency [Hz]')
 ax.invert_xaxis()
-# ax.set_xscale('log')
 ax.set_xlim(period_lim)
 ax.xaxis.set_major_formatter(FormatStrFormatter("%g")) #Pas de 10^
 
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
-### Probleme affichage heures title
+if np.abs(end.datetime.hour-12)>=12:
+    t='pm'
+else:
+    t='am'
+########################
 title = "%s   %s--%s   (from %s to %s %s) \n day to compare : %s "
 title = title % (iid,beg.date,(end-1).date,
                   np.abs(beg.datetime.hour-12),
