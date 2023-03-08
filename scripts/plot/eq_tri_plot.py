@@ -15,7 +15,7 @@ most likely an earthquake. Signals after that, are mostly (maybe only) composed
 of noise. Then PPSD computations are used on that new clean signal to study the 
 amplitude of a range of frequencies.
 
-Last time checked on Tue Mar  7
+Last time checked on Tue Mar  8
 
 """
 
@@ -49,7 +49,7 @@ client = Client("IRIS")
 date = date_n(2015,1,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 365 #8 = 1 semaine
+num  = 3 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Period of time for computations per segm
@@ -275,7 +275,7 @@ for iday in timeday:
     for ihour in timehr:
 
         # Cut of the data on choosen times
-        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
+        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),0))+(starttime.datetime.microsecond/1000000)
         endtimenew   = starttimenew+segm
         
         try: #if stream is empty or the wanted hours are missing
@@ -293,7 +293,7 @@ for iday in timeday:
             break
         
         if len(trace)==0 or len(trace)<3600*sampling_rate:
-            break
+            break 
         
         # First calculated time (need for title)
         if beg==None:
@@ -451,14 +451,21 @@ else:
     ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
     ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
     
-    if (h1-12)<=12:
-        t='pm'
-    else:
-        t='am'
-    ########################
-    title = "%s   %s--%s   (from %s to %s %s) "
+    th1=beg.datetime.hour
+    th2=end.datetime.hour
+    tth1='am';tth2='am'
+    if th2==0:
+        th2=12
+        tth2='pm'
+    if th1>12:
+        th1=th1-12
+        tth1='pm'
+    if th2>12:
+        th2=th2-12
+        tth2='pm'
+    title = "%s   %s--%s   (from %s to %s %s-%s) "
     title = title % (iid,beg.date,(end-1).date,
-                      np.abs(h1-12),np.abs(h2-12),t)
+                      th1,th2,tth1,tth2)
     ax.set_title(title)
     
     # Show the figure
