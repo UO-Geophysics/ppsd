@@ -508,6 +508,9 @@ ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 th1=beg.datetime.hour
 th2=end.datetime.hour
 tth1='am';tth2='am'
+if th2==0:
+    th2=12
+    tth2='pm'
 if th1>12:
     th1=th1-12
     tth1='pm'
