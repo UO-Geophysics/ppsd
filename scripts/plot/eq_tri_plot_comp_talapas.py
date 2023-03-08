@@ -6,7 +6,7 @@ Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Tue Mar  7
+Last time checked on Tue Mar  8
 
 Updates to do : need to verify that logging and argparse is working and use of
 the code on a terminal to see how it goes + modification of the paths when 
@@ -491,14 +491,21 @@ def main():
     ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
     ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
     
-    if (args.h1-12)<=12:
-        t='pm'
-    else:
-        t='am'
-    ########################
-    title = "%s   %s--%s   (from %s to %s %s)"
+    th1=beg.datetime.hour
+    th2=end.datetime.hour
+    tth1='am';tth2='am'
+    if th2==0:
+        th2=12
+        tth2='pm'
+    if th1>12:
+        th1=th1-12
+        tth1='pm'
+    if th2>12:
+        th2=th2-12
+        tth2='pm'
+    title = "%s   %s--%s   (from %s to %s %s-%s) "
     title = title % (iid,beg.date,(end-1).date,
-                      np.abs(args.h1-12),np.abs(args.h2-12),t)
+                      th1,th2,tth1,tth2)
     ax.set_title(title)
     
     # Show the figure
@@ -715,10 +722,9 @@ def main():
             dayt='0'+str(end.day)
         elif len(str(end.month))<2:
             mtht='0'+str(end.month)
-    
-        title = "%s   %s--%s   (from %s to %s %s) \n day to compare : %s-%s-%s"
+        title = "%s   %s--%s   (from %s to %s %s-%s) \n day to compare : %s-%s-%s"
         title = title % (iid,beg.date,(endlast-1).date,
-                          np.abs(args.h1-12),np.abs(args.h2-12),t,yrt,mtht,dayt)
+                          th1,th2,tth1,tth2,yrt,mtht,dayt)
         ax2.set_title(title)
         fig2.savefig(f'{args.net}.{args.sta}..{args.cha}_fig_.{yrt}{mtht}{dayt}.jpg', dpi=300, bbox_inches='tight')
         cptday+=1
