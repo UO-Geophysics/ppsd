@@ -461,7 +461,6 @@ title = title % (iid,beg.date,(end-1).date,
                   th1,th2,tth1,tth2)
 ax.set_title(title)
 
-
 # Show the figure
 plt.ion()
 plt.savefig(f'{net}.{sta}.{cha}_fig.jpg', dpi=300, bbox_inches='tight')
