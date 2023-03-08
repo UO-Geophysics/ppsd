@@ -8,7 +8,7 @@ Update  on Wed Jan 24
 This script does the same computation as the spec_estimation.py but shows
 the results in a plot (curve) form and not in a probabilistic way.
 
-Last time checked on Tue Mar  7
+Last time checked on Tue Mar  8
 
 Optimization : need to find a way to have proper hours in the title of the figures
 
@@ -500,7 +500,6 @@ ax.grid(True, which="minor", **color)
 ax.set_xlabel('Frequency [Hz]')
 ax.invert_xaxis()
 ax.set_xlim(period_lim)
-ax.xaxis.set_major_formatter(FormatStrFormatter("%g")) #Pas de 10^
 
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
