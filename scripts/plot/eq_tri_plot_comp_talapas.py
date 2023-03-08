@@ -14,7 +14,6 @@ using the calculator (also in the functions)
 
 """
 
-import os
 import fcts
 import pickle
 import logging
@@ -84,11 +83,12 @@ def main():
     )
     
     args = get_args()
-    ### A MODIFIER
+    
     logging.info('----- DATA INFOS -----')
-    logging.info(str(args.mth)+'-'+str(args.day)+'-'+str(args.yr)+' + '+str(args.num)+' days')
-    logging.info('from '+str(args.h1)+' to '+str(args.h2)+' for '+args.net+'.'+args.sta)
-    logging.info('from '+str(args.f1)+' to '+str(args.f2)+' Hz')
+    logging.info('Year : '+str(args.yr)+' for '+args.net+'.'+args.sta+'..'+args.cha)
+    logging.info('Frequencies : '+str(args.f1)+' to '+str(args.f2)+' Hz')
+    logging.info('Hours : '+str(args.h1)+' to '+str(args.h2))
+    logging.info('Threshold of '+str(args.thrhold))
     
     # Days parameters
     date = date_n(args.yr,args.mth,args.day)
@@ -163,7 +163,7 @@ def main():
         model=unet_tools.make_large_unet_b(fac,sr,ncomps=3)  
     
     # LOAD THE MODEL
-    model.load_weights("/Users/loispapin/Documents/Work/AI/"+model_save_file)  
+    model.load_weights("/home/lpapin/Work/"+model_save_file)  
     
     """
         Start of the figure : first calculation of pvals and svals values ; then
@@ -196,8 +196,11 @@ def main():
         if len(str(tod)) == 1:
             tod = ('0' + str(tod))
             
-        D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/Users/loispapin/Documents/Work/PNSN/2015/Data/'
-                                                         +args.sta+'/'+args.sta+'.'+args.net+'.2015.'+day, 'p_and_s')
+        if args.net=='PB' or args.net=='UW':
+            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+args.net+'/data/'+args.net+'/'+args.yr+'/'+day+'/'+args.sta+'.'+args.net+'.'+args.yr+'.'+day)
+        elif args.net=='CN':
+            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+args.net+'/'+args.yr+args.mth+args.day+'.'+args.net+'.'+args.sta+'..'+args.cha)
+
         times=D_Z.times()
         t_start = D_Z.stats.starttime
         D_Z=D_Z.data
@@ -269,13 +272,13 @@ def main():
         logging.info(timehr) #Hours processed
         
         # Read the file #####################
-        path = "/Users/loispapin/Documents/Work/PNSN/"
+        path = "/projects/amt/shared/cascadia_"
         if args.net=='PB' or args.net=='UW':
-            filename = (path + args.yr + '/Data/' + args.sta + '/' + args.sta 
-                        + '.' + args.net + '.' + args.yr + '.' + day)
+            filename = (path+args.net+'/data/'+args.net+'/'+args.yr+'/'+
+                        day+'/'+args.sta+'.'+args.net+'.'+args.yr+'.'+day)
         elif args.net=='CN':
-            filename = (path + args.yr + '/Data/' + args.sta + '/' + args.yr + mth + 
-                        tod + '.' + args.net + '.' + args.sta + '..' + args.cha + '.mseed')
+            filename = (path+args.net+'/'+args.yr+args.mth+args.day+'.'+
+                    args.net+'.'+args.sta+'..'+args.cha+ '.mseed')
         
         try: #if stream is empty or the wanted hours are missing
             # 1 day 
@@ -313,7 +316,7 @@ def main():
         for ihour in timehr:
     
             # Cut of the data on choosen times
-            starttimenew = UTCDateTime(datetime.datetime(int(args.yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
+            starttimenew = UTCDateTime(datetime.datetime(int(args.yr),int(mth),int(tod),int(ihour),0))+(starttime.datetime.microsecond/1000000)
             endtimenew   = starttimenew+segm
             
             try: #if stream is empty or the wanted hours are missing
@@ -343,7 +346,7 @@ def main():
             try: 
                 metadata = client.get_stations(network=network,station=station,
                                                starttime=starttimenew,endtime=endtimenew,level='response')
-            except: #Keep the trace with error
+            except: #Keep the traces with error
                 time_error.append(trace)
         
             # FFT calculations
@@ -513,7 +516,8 @@ def main():
     plt.savefig(f'{args.net}.{args.sta}..{args.cha}_fig.jpg', dpi=300, bbox_inches='tight')
     plt.savefig('fig.jpg', dpi=300, bbox_inches='tight')
     
-    pickle.dump(fig, open('myplot.pickle', 'wb'))
+    picklename=(args.sta+'_'+args.yr)
+    pickle.dump(fig, open(picklename+'.pickle', 'wb'))
     
     """
         Here it's about what day.s we want to compare to the set of data previously
@@ -538,8 +542,8 @@ def main():
     
     for iday in timeday:
         
-        # Load the previous figure 
-        fig2 = pickle.load(open('myplot.pickle','rb'))
+        # Load the previous figure
+        fig2 = pickle.load(open(picklename+'.pickle','rb'))
         ax2  = fig2.axes[0]
         
         if len(str(iday)) == 1:
@@ -555,15 +559,15 @@ def main():
             mth = ('0' + str(mth))
         if len(str(tod)) == 1:
             tod = ('0' + str(tod))
-    
+            
         # Read the file
-        path = "/Users/loispapin/Documents/Work/PNSN/"
-        if net=='PB' or net=='UW':
-            filename = (path + yr + '/Data/' + sta + '/' + sta 
-                        + '.' + net + '.' + yr + '.' + day)
-        elif net=='CN':
-            filename = (path + yr + '/Data/' + sta + '/' + yr + mth + 
-                        tod + '.' + net + '.' + sta + '..' + cha + '.mseed')
+        path = "/projects/amt/shared/cascadia_"
+        if args.net=='PB' or args.net=='UW':
+            filename = (path+args.net+'/data/'+args.net+'/'+args.yr+'/'+
+                        day+'/'+args.sta+'.'+args.net+'.'+args.yr+'.'+day)
+        elif args.net=='CN':
+            filename = (path+args.net+'/'+args.yr+args.mth+args.day+'.'+
+                    args.net+'.'+args.sta+'..'+args.cha+ '.mseed')
         
         try: #if stream is empty or the wanted hours are missing
             # 1 day 
@@ -592,7 +596,7 @@ def main():
         for ihour in timehr:
     
             # Cut of the data on choosen times
-            starttimenew = UTCDateTime(datetime.datetime(int(args.yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
+            starttimenew = UTCDateTime(datetime.datetime(int(args.yr),int(mth),int(tod),int(ihour),0))+(starttime.datetime.microsecond/1000000)
             endtimenew   = starttimenew+segm
             
             try: #if stream is empty or the wanted hours are missing
@@ -615,10 +619,10 @@ def main():
             logging.info(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
         
             iid = "%(network)s.%(station)s..%(channel)s" % stats 
-            try: #Except for a XLMSyntaxError
+            try: 
                 metadata = client.get_stations(network=network,station=station,
                                                starttime=starttimenew,endtime=endtimenew,level='response')
-            except: #Keep the trace with error
+            except: #Keep the traces with error
                 time_error.append(trace)
         
             # FFT calculations
