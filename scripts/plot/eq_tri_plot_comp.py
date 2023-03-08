@@ -6,7 +6,7 @@ Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Tue Mar  7
+Last time checked on Tue Mar  8
 
 """
 
@@ -40,7 +40,7 @@ client = Client("IRIS")
 date = date_n(2015,1,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 365 #8 = 1 semaine
+num  = 3 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Period of time for computations per segm
@@ -149,8 +149,8 @@ for iday in timeday:
     if len(str(tod)) == 1:
         tod = ('0' + str(tod))
         
-    D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/Users/loispapin/Documents/Work/PNSN/2014/Data/'
-                                                     +sta+'/'+sta+'.'+net+'.2014.'+day, 'p_and_s')
+    D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/Users/loispapin/Documents/Work/PNSN/2015/Data/'
+                                                     +sta+'/'+sta+'.'+net+'.2015.'+day, 'p_and_s')
     times=D_Z.times()
     t_start = D_Z.stats.starttime
     D_Z=D_Z.data
@@ -266,7 +266,7 @@ for iday in timeday:
     for ihour in timehr:
 
         # Cut of the data on choosen times
-        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
+        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),0))+(starttime.datetime.microsecond/1000000)
         endtimenew   = starttimenew+segm
         
         try: #if stream is empty or the wanted hours are missing
@@ -444,15 +444,21 @@ ax.set_xlim(period_lim)
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
-if (h1-12)<=12:
-    t='pm'
-else:
-    t='am'
-########################
-title = "%s   %s--%s   (from %s to %s %s)"
+th1=beg.datetime.hour
+th2=end.datetime.hour
+tth1='am';tth2='am'
+if th2==0:
+    th2=12
+    tth2='pm'
+if th1>12:
+    th1=th1-12
+    tth1='pm'
+if th2>12:
+    th2=th2-12
+    tth2='pm'
+title = "%s   %s--%s   (from %s to %s %s-%s) "
 title = title % (iid,beg.date,(end-1).date,
-                  np.abs(h1-12),np.abs(h2-12),t)
-ax.set_title(title)
+                  th1,th2,tth1,tth2)
 
 # Show the figure
 plt.ion()
@@ -540,7 +546,7 @@ for iday in timeday:
     for ihour in timehr:
 
         # Cut of the data on choosen times
-        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
+        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),0))+(starttime.datetime.microsecond/1000000)
         endtimenew   = starttimenew+segm
         
         try: #if stream is empty or the wanted hours are missing
@@ -669,12 +675,12 @@ for iday in timeday:
         dayt='0'+str(end.day)
     elif len(str(end.month))<2:
         mtht='0'+str(end.month)
-    ########################
-    title = "%s   %s--%s   (from %s to %s %s) \n day to compare : %s-%s-%s"
+    title = "%s   %s--%s   (from %s to %s %s-%s) \n day to compare : %s-%s-%s"
     title = title % (iid,beg.date,(endlast-1).date,
-                      np.abs(h1-12),np.abs(h2-12),t,yrt,mtht,dayt)
+                      th1,th2,tth1,tth2,yrt,mtht,dayt)
     ax2.set_title(title)
     fig2.savefig(f'{net}.{sta}..{cha}_fig_.{yrt}{mtht}{dayt}.jpg', dpi=300, bbox_inches='tight')
+    
     cptday+=1
 
 if plot2 is None:
