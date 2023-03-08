@@ -9,7 +9,7 @@ This script does the same computation as the spec_estimation_yr.py but shows
 the results in a plot (curve) form and not in a probabilistic way. 
 Possibility to add the 5th & 95th percentiles.
 
-Last time checked on Tue Mar  7
+Last time checked on Tue Mar  8
 
 Optimization : need to find a way to have proper hours in the title of the figures
 
