@@ -15,13 +15,13 @@ Optimization : need to find a way to have proper hours in the title of the figur
 
 """
 
-import os
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 import datetime
 from datetime import date as date_n
+
+import matplotlib.pyplot as plt
 from matplotlib import mlab
 
 from obspy import read
@@ -30,7 +30,6 @@ from obspy.signal.util import prev_pow_2
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
-# Functions called in this script #Mac & Windows
 runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
         wdir='/Users/loispapin/Documents/Work/PNSN')
 
@@ -44,12 +43,12 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 date = date_n(2015,1,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 365 #8 = 1 semaine
+num  = 3 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Period of time for computations per segm
-h2 = 20; h1 = 24;
-timehr=np.arange(h1,h1,1,dtype=int)
+h1 = 20; h2 = 24;
+timehr=np.arange(h1,h2,1,dtype=int)
 
 # Nom du fichier
 sta = 'B926'
@@ -138,7 +137,7 @@ for iday in timeday:
     for ihour in timehr:
 
         # Cut of the data on choosen times
-        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),30))+(starttime.datetime.microsecond/1000000)
+        starttimenew = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod),int(ihour),0))+(starttime.datetime.microsecond/1000000)
         endtimenew   = starttimenew+segm
         
         try: #if stream is empty or the wanted hours are missing
@@ -304,20 +303,21 @@ ax.set_xlim(period_lim)
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
-if np.abs(end.datetime.hour-12)>=12:
-    t='pm'
-else:
-    t='am'
-title = "%s   %s--%s   (from %s to %s %s) "
-########################
-# th1=beg.datetime.hour
-# th2=end.datetime.hour
-# if th1<
-########################
+th1=beg.datetime.hour
+th2=end.datetime.hour
+tth1='am';tth2='am'
+if th2==0:
+    th2=12
+    tth2='pm'
+if th1>12:
+    th1=th1-12
+    tth1='pm'
+if th2>12:
+    th2=th2-12
+    tth2='pm'
+title = "%s   %s--%s   (from %s to %s %s-%s) "
 title = title % (iid,beg.date,(end-1).date,
-                  np.abs(beg.datetime.hour-12),
-                  np.abs(end.datetime.hour-12),
-                  t)
+                  th1,th2,tth1,tth2)
 ax.set_title(title)
 
 # Show the figure
