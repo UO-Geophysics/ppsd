@@ -6,7 +6,7 @@ Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Tue Mar  8
+Last time checked on Tue Mar  9
 
 Updates to do : need to verify that logging and argparse is working and use of
 the code on a terminal to see how it goes + modification of the paths when 
@@ -14,6 +14,7 @@ using the calculator (also in the functions)
 
 """
 
+import json
 import fcts
 import pickle
 import logging
@@ -49,14 +50,14 @@ def get_args():
     parse.add_argument('mth'     , type=int, help="Month of processing")
     parse.add_argument('day'     , type=int, help="Day of processing")
     parse.add_argument('num'     , type=int, help="Number of days of processing")
-    parse.add_argument('net'     , type=str, help="Station of processing")
+    # parse.add_argument('net'     , type=str, help="Station of processing")
     parse.add_argument('sta'     , type=str, help="Network of processing")
     parse.add_argument('cha'     , type=str, help="Channel of processing")
     parse.add_argument('h1'      , type=int, help="Start time hour of processing (hour)")
     parse.add_argument('h2'      , type=int, help="End time of processing (hour)")
     parse.add_argument('f1'      , type=int, help="First frequency for the range")
     parse.add_argument('f2'      , type=int, help="Last frequency for the range")
-    parse.add_argument('thrhold' , type=float, help="Threshold for P and S waves picks")
+    # parse.add_argument('thrhold' , type=float, help="Threshold for P and S waves picks")
     parse.add_argument('yr2'     , type=int, help="Year of comparison")
     parse.add_argument('mth2'    , type=int, help="Month of comparison")
     parse.add_argument('day2'    , type=int, help="Day of comparison")
@@ -68,6 +69,11 @@ def get_args():
     that will help with the building of the model and the use of an eq CNN.
     
 """
+
+def get_args_json():
+    with open('./param.json', 'r') as f:
+        data = json.load(f)
+    param1 = data['station1']['param1']
 
 def main():
     
@@ -106,7 +112,7 @@ def main():
     overlap                        = 0
     period_smoothing_width_octaves = 1.0
     period_step_octaves            = 0.0125
-    db_bins                        = (-170, -110, 0.5)
+    db_bins                        = (bins1, bins2, 0.5)
     
     # Calculation on f1-f2Hz
     period_limits = (1/args.f2,1/args.f1)
@@ -163,7 +169,7 @@ def main():
         model=unet_tools.make_large_unet_b(fac,sr,ncomps=3)  
     
     # LOAD THE MODEL
-    model.load_weights("/home/lpapin/Work/"+model_save_file)  
+    model.load_weights("/home/lpapin/Work/"+model_save_file)
     
     """
         Start of the figure : first calculation of pvals and svals values ; then
@@ -197,9 +203,9 @@ def main():
             tod = ('0' + str(tod))
             
         if args.net=='PB' or args.net=='UW':
-            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+args.net+'/data/'+args.net+'/'+args.yr+'/'+day+'/'+args.sta+'.'+args.net+'.'+args.yr+'.'+day)
+            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+args.net+'/data/'+args.net+'/'+str(args.yr)+'/'+day+'/'+args.sta+'.'+args.net+'.'+str(args.yr)+'.'+day, 'p_and_s')
         elif args.net=='CN':
-            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+args.net+'/'+args.yr+args.mth+args.day+'.'+args.net+'.'+args.sta+'..'+args.cha)
+            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+args.net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+args.net+'.'+args.sta+'..'+args.cha, 'p_and_s')
 
         times=D_Z.times()
         t_start = D_Z.stats.starttime
@@ -274,10 +280,10 @@ def main():
         # Read the file #####################
         path = "/projects/amt/shared/cascadia_"
         if args.net=='PB' or args.net=='UW':
-            filename = (path+args.net+'/data/'+args.net+'/'+args.yr+'/'+
-                        day+'/'+args.sta+'.'+args.net+'.'+args.yr+'.'+day)
+            filename = (path+args.net+'/data/'+args.net+'/'+str(args.yr)+'/'+
+                        day+'/'+args.sta+'.'+args.net+'.'+str(args.yr)+'.'+day)
         elif args.net=='CN':
-            filename = (path+args.net+'/'+args.yr+args.mth+args.day+'.'+
+            filename = (path+args.net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+
                     args.net+'.'+args.sta+'..'+args.cha+ '.mseed')
         
         try: #if stream is empty or the wanted hours are missing
@@ -382,6 +388,7 @@ def main():
             # Read the all stream by the defined segments
             t1 = trace.stats.starttime
             t2 = trace.stats.endtime
+            logging.info(metadata)
             while t1 + ppsd_length - trace.stats.delta <= t2:
                 slice = trace.slice(t1, t1 + ppsd_length -
                                     trace.stats.delta)
@@ -516,7 +523,7 @@ def main():
     plt.savefig(f'{args.net}.{args.sta}..{args.cha}_fig.jpg', dpi=300, bbox_inches='tight')
     plt.savefig('fig.jpg', dpi=300, bbox_inches='tight')
     
-    picklename=(args.sta+'_'+args.yr)
+    picklename=(args.sta+'_'+str(args.yr)+'_'+args.cha)
     pickle.dump(fig, open(picklename+'.pickle', 'wb'))
     
     """
@@ -552,7 +559,7 @@ def main():
             day = ('0' + str(iday))
         elif len(str(iday)) == 3:
             day = (str(iday))
-        datebis=datetime.datetime(int(yr),1,1)+datetime.timedelta(days=int(iday-1))
+        datebis=datetime.datetime(int(args.yr),1,1)+datetime.timedelta(days=int(iday-1))
         mth = str(datebis.timetuple().tm_mon)
         tod = str(datebis.timetuple().tm_mday)
         if len(str(mth)) == 1:
@@ -563,10 +570,10 @@ def main():
         # Read the file
         path = "/projects/amt/shared/cascadia_"
         if args.net=='PB' or args.net=='UW':
-            filename = (path+args.net+'/data/'+args.net+'/'+args.yr+'/'+
-                        day+'/'+args.sta+'.'+args.net+'.'+args.yr+'.'+day)
+            filename = (path+args.net+'/data/'+args.net+'/'+str(args.yr)+'/'+
+                        day+'/'+args.sta+'.'+args.net+'.'+str(args.yr)+'.'+day)
         elif args.net=='CN':
-            filename = (path+args.net+'/'+args.yr+args.mth+args.day+'.'+
+            filename = (path+args.net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+
                     args.net+'.'+args.sta+'..'+args.cha+ '.mseed')
         
         try: #if stream is empty or the wanted hours are missing
@@ -731,6 +738,7 @@ def main():
                           th1,th2,tth1,tth2,yrt,mtht,dayt)
         ax2.set_title(title)
         fig2.savefig(f'{args.net}.{args.sta}..{args.cha}_fig_.{yrt}{mtht}{dayt}.jpg', dpi=300, bbox_inches='tight')
+        # print(f'{args.net}.{args.sta}..{args.cha}_fig_.{yrt}{mtht}{dayt}.jpg)')
         cptday+=1
     
     if plot2 is None:
