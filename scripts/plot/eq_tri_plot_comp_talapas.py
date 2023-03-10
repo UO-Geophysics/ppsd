@@ -69,12 +69,16 @@ def get_args():
     that will help with the building of the model and the use of an eq CNN.
     
 """
+
 #####################
 def get_args_json():
     with open('./param.json', 'r') as f:
         data = json.load(f)
-    param1 = data['station1']['param1']
-    ##################### modif les variables avec args. (net + threshold)
+    net   = data['?']['network']
+    thr   = data['?']['threshold']
+    bins1 = data['?']['bins1']
+    bins2 = data['?']['bins2']
+
 def main():
     
     # To replace the print ### to adjust #####################
@@ -91,10 +95,10 @@ def main():
     args = get_args()
     
     logging.info('----- DATA INFOS -----')
-    logging.info('Year : '+str(args.yr)+' for '+args.net+'.'+args.sta+'..'+args.cha)
+    logging.info('Year : '+str(args.yr)+' for '+net+'.'+args.sta+'..'+args.cha)
     logging.info('Frequencies : '+str(args.f1)+' to '+str(args.f2)+' Hz')
     logging.info('Hours : '+str(args.h1)+' to '+str(args.h2))
-    logging.info('Threshold of '+str(args.thrhold))
+    logging.info('Threshold of '+str(thr))
     
     # Days parameters
     date = date_n(args.yr,args.mth,args.day)
@@ -202,10 +206,10 @@ def main():
         if len(str(tod)) == 1:
             tod = ('0' + str(tod))
             
-        if args.net=='PB' or args.net=='UW':
-            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+args.net+'/data/'+args.net+'/'+str(args.yr)+'/'+day+'/'+args.sta+'.'+args.net+'.'+str(args.yr)+'.'+day, 'p_and_s')
-        elif args.net=='CN':
-            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+args.net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+args.net+'.'+args.sta+'..'+args.cha, 'p_and_s')
+        if net=='PB' or net=='UW':
+            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+net+'/data/'+net+'/'+str(args.yr)+'/'+day+'/'+args.sta+'.'+net+'.'+str(args.yr)+'.'+day, 'p_and_s')
+        elif net=='CN':
+            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+net+'.'+args.sta+'..'+args.cha, 'p_and_s')
 
         times=D_Z.times()
         t_start = D_Z.stats.starttime
@@ -253,7 +257,7 @@ def main():
         
         #### DETECTE LES VALEURS >= threshold ####
         
-        indx=np.where((pvals>=args.thrhold)|(svals>=args.thrhold))
+        indx=np.where((pvals>=thr)|(svals>=thr))
         
         h=[]
         timehr=np.arange(args.h1,args.h2,1,dtype=int)
@@ -279,12 +283,12 @@ def main():
         
         # Read the file #####################
         path = "/projects/amt/shared/cascadia_"
-        if args.net=='PB' or args.net=='UW':
-            filename = (path+args.net+'/data/'+args.net+'/'+str(args.yr)+'/'+
-                        day+'/'+args.sta+'.'+args.net+'.'+str(args.yr)+'.'+day)
-        elif args.net=='CN':
-            filename = (path+args.net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+
-                    args.net+'.'+args.sta+'..'+args.cha+ '.mseed')
+        if net=='PB' or net=='UW':
+            filename = (path+net+'/data/'+net+'/'+str(args.yr)+'/'+
+                        day+'/'+args.sta+'.'+net+'.'+str(args.yr)+'.'+day)
+        elif net=='CN':
+            filename = (path+net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+
+                    net+'.'+args.sta+'..'+args.cha+ '.mseed')
         
         try: #if stream is empty or the wanted hours are missing
             # 1 day 
@@ -298,7 +302,7 @@ def main():
         except:
             logging.error('Probleme de premiere lecture du file')
             logging.error('A verifier si pb de channel ou autre')
-            name=args.net+'.'+args.sta+'..'+args.cha+'.'+day
+            name=net+'.'+args.sta+'..'+args.cha+'.'+day
             time_unv.append(name)
             logging.error('Break sur '+name)
             break
@@ -335,7 +339,7 @@ def main():
                     cpttr+=1
                 trace = stream[cpttr]
             except:
-                name=args.net+'.'+args.sta+'..'+args.cha+'.'+args.day
+                name=net+'.'+args.sta+'..'+args.cha+'.'+args.day
                 time_unv.append(name)
                 break
             
@@ -520,7 +524,7 @@ def main():
     
     # Show the figure
     plt.ion()
-    plt.savefig(f'{args.net}.{args.sta}..{args.cha}_fig.jpg', dpi=300, bbox_inches='tight')
+    plt.savefig(f'{net}.{args.sta}..{args.cha}_fig.jpg', dpi=300, bbox_inches='tight')
     plt.savefig('fig.jpg', dpi=300, bbox_inches='tight')
     
     picklename=(args.sta+'_'+str(args.yr)+'_'+args.cha)
@@ -569,12 +573,12 @@ def main():
             
         # Read the file
         path = "/projects/amt/shared/cascadia_"
-        if args.net=='PB' or args.net=='UW':
-            filename = (path+args.net+'/data/'+args.net+'/'+str(args.yr)+'/'+
-                        day+'/'+args.sta+'.'+args.net+'.'+str(args.yr)+'.'+day)
-        elif args.net=='CN':
-            filename = (path+args.net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+
-                    args.net+'.'+args.sta+'..'+args.cha+ '.mseed')
+        if net=='PB' or net=='UW':
+            filename = (path+net+'/data/'+net+'/'+str(args.yr)+'/'+
+                        day+'/'+args.sta+'.'+net+'.'+str(args.yr)+'.'+day)
+        elif net=='CN':
+            filename = (path+net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+
+                    net+'.'+args.sta+'..'+args.cha+ '.mseed')
         
         try: #if stream is empty or the wanted hours are missing
             # 1 day 
@@ -588,7 +592,7 @@ def main():
         except:
             logging.error('Probleme de premiere lecture du file')
             logging.error('A verifier si pb de channel ou autre')
-            name=args.net+'.'+args.sta+'..'+args.cha+'.'+day
+            name=net+'.'+args.sta+'..'+args.cha+'.'+day
             time_unv.append(name)
             logging.error('Break sur '+name)
             break
@@ -616,7 +620,7 @@ def main():
                     cpttr+=1
                 trace = stream[cpttr]
             except:
-                name=args.net+'.'+args.sta+'..'+args.cha+'.'+args.day
+                name=net+'.'+args.sta+'..'+args.cha+'.'+args.day
                 time_unv.append(name)
                 break
             
@@ -737,8 +741,8 @@ def main():
         title = title % (iid,beg.date,(endlast-1).date,
                           th1,th2,tth1,tth2,yrt,mtht,dayt)
         ax2.set_title(title)
-        fig2.savefig(f'{args.net}.{args.sta}..{args.cha}_fig_.{yrt}{mtht}{dayt}.jpg', dpi=300, bbox_inches='tight')
-        # print(f'{args.net}.{args.sta}..{args.cha}_fig_.{yrt}{mtht}{dayt}.jpg)')
+        fig2.savefig(f'{net}.{args.sta}..{args.cha}_fig_.{yrt}{mtht}{dayt}.jpg', dpi=300, bbox_inches='tight')
+        # print(f'{net}.{args.sta}..{args.cha}_fig_.{yrt}{mtht}{dayt}.jpg)')
         cptday+=1
     
     if plot2 is None:
