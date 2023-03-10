@@ -69,12 +69,12 @@ def get_args():
     that will help with the building of the model and the use of an eq CNN.
     
 """
-
+#####################
 def get_args_json():
     with open('./param.json', 'r') as f:
         data = json.load(f)
     param1 = data['station1']['param1']
-
+    ##################### modif les variables avec args. (net + threshold)
 def main():
     
     # To replace the print ### to adjust #####################
