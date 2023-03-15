@@ -6,11 +6,10 @@ Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Tue Mar  8
+Last time checked on Tue Mar 15
 
 """
 
-import os
 import fcts
 import pickle
 import datetime
@@ -37,10 +36,10 @@ client = Client("IRIS")
 """
 
 # Start of the data and how long
-date = date_n(2015,1,1)
+date = date_n(2014,6,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 3 #8 = 1 semaine
+num  = 2 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Period of time for computations per segm
@@ -48,9 +47,9 @@ h1 = 20; h2 = 24
 timehr=np.arange(h1,h2,1,dtype=int)
 
 # Nom du fichier
-sta = 'B926'
-net = 'PB'
-cha = 'EHZ' 
+sta = 'DOSE'
+net = 'UW'
+cha = 'BHZ' 
 yr  = str(date.timetuple().tm_year)
 
 # Parameters 
@@ -148,9 +147,9 @@ for iday in timeday:
         mth = ('0' + str(mth))
     if len(str(tod)) == 1:
         tod = ('0' + str(tod))
-        
-    D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/Users/loispapin/Documents/Work/PNSN/2015/Data/'
-                                                     +sta+'/'+sta+'.'+net+'.2015.'+day, 'p_and_s')
+    
+    D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/Users/loispapin/Documents/Work/PNSN/2014/Data/'
+                                                     +sta+'/'+sta+'.'+net+'.2014.'+day, 'p_and_s')
     times=D_Z.times()
     t_start = D_Z.stats.starttime
     D_Z=D_Z.data
@@ -240,12 +239,9 @@ for iday in timeday:
             cpttr+=1
         trace=stream[cpttr]
     except:
-        print('Probleme de premiere lecture du file')
-        print('A verifier si pb de channel ou autre')
         name=net+'.'+sta+'..'+cha+'.'+day
         time_unv.append(name)
-        print('Break sur '+name)
-        break
+        continue
     
     stats         = trace.stats
     network       = trace.stats.network
@@ -261,7 +257,6 @@ for iday in timeday:
         copy=trace.copy()
         copy.trim(starttime=starttimeout,endtime=endtimeout)
         trace_out.append(copy)
-        # print(trace_out)
     
     for ihour in timehr:
 
@@ -281,10 +276,10 @@ for iday in timeday:
         except:
             name=net+'.'+sta+'..'+cha+'.'+day
             time_unv.append(name)
-            break
+            continue
         
         if len(trace)==0 or len(trace)<3600*sampling_rate:
-            break
+            continue
         
         # First calculated time (need for title)
         if beg==None:
@@ -407,30 +402,30 @@ for iday in timeday:
 # For title
 endlast=end
 
-if plot1 is None:
-    print('----- PERIOD OF DATA -----')
-    print('No data to plot')
-    print('Name of some of the segments which the data were unavailable : '+str(time_unv))
-else:
+if 'plot1' in locals():
     print('----- PERIOD OF DATA -----')
     print('Number of segments with earthquakes taking out : '+str(len(trace_out)))
     print('Number of segments plotted : '+str((num*(h2-h1)-len(trace_out)))+' out of '+str(num*(h2-h1)))
     if time_unv!=[]:
-        print('Name of the segments which the data were unavailable : '+str(time_unv))
+        print('Name of the segments which the data were unavailable : '+str(np.unique(time_unv) ))
+else:
+    print('----- PERIOD OF DATA -----')
+    print('No data to plot')
+    print('Name of some of the segments which the data were unavailable : '+str(np.unique(time_unv) ))
     
-    # Changing column of 0 in nan for percentiles
-    df=pd.DataFrame(newcurves)
-    df.replace(0,np.nan,inplace=True)
-    newcurves=df.to_numpy()
-    
-    # 5th & 95th percentiles
-    curve5 =np.zeros(sz)
-    curve95=np.zeros(sz)
-    for ip in np.linspace(0,sz-1,sz):
-        curve5[int(ip)] =np.nanpercentile(newcurves[int(ip)], 5)
-        curve95[int(ip)]=np.nanpercentile(newcurves[int(ip)],95)
-    
-    plt.plot(x,curve5,'b',x,curve95,'b')
+# Changing column of 0 in nan for percentiles
+df=pd.DataFrame(newcurves)
+df.replace(0,np.nan,inplace=True)
+newcurves=df.to_numpy()
+
+# 5th & 95th percentiles
+curve5 =np.zeros(sz)
+curve95=np.zeros(sz)
+for ip in np.linspace(0,sz-1,sz):
+    curve5[int(ip)] =np.nanpercentile(newcurves[int(ip)], 5)
+    curve95[int(ip)]=np.nanpercentile(newcurves[int(ip)],95)
+
+plt.plot(x,curve5,'b',x,curve95,'b')
     
 # Grid
 color = {"color": "0.7"}
@@ -475,10 +470,10 @@ pickle.dump(fig, open('myplot.pickle', 'wb'))
 """
 
 # Start of the data and how long
-date = date_n(2015,12,12)
+date = date_n(2015,12,16)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 1 #8 = 1 semaine
+num  = 16 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 timehr=np.arange(h1,h2,1,dtype=int)
 
@@ -486,6 +481,7 @@ timehr=np.arange(h1,h2,1,dtype=int)
 cptday=0
 cpttrout=0
 cpttrout2=0
+time_unv=[] #Lack of data
 
 # # Period of time for computations per segm
 # h1 = 20; h2 = 24
@@ -530,12 +526,9 @@ for iday in timeday:
             cpttr+=1
         trace=stream[cpttr]
     except:
-        print('Probleme de premiere lecture du file')
-        print('A verifier si pb de channel ou autre')
         name=net+'.'+sta+'..'+cha+'.'+day
         time_unv.append(name)
-        print('Break sur '+name)
-        break
+        continue
     
     stats         = trace.stats
     network       = trace.stats.network
@@ -562,10 +555,10 @@ for iday in timeday:
         except:
             name=net+'.'+sta+'..'+cha+'.'+day
             time_unv.append(name)
-            break
+            continue
         
         if len(trace)==0 or len(trace)<3600*sampling_rate:
-            break
+            continue
         
         print(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
     
@@ -684,13 +677,13 @@ for iday in timeday:
     
     cptday+=1
 
-if plot2 is None:
-    print('----- DAY(S) OF COMPARISON -----')
-    print('No data to plot')
-    print('Name of some of the segments which the data were unavailable : '+str(time_unv))
-else:
+if 'plot2' in locals():
     print('----- DAY(S) OF COMPARISON -----')
     print('Number of segments with earthquakes taking out : '+str(cpttrout))
     print('Number of segments plotted : '+str((num*(h2-h1)-cpttrout))+' out of '+str(num*(h2-h1)))
     if time_unv!=[]:
-        print('Name of the segments which the data were unavailable : '+str(time_unv))
+        print('Name of the segments which the data were unavailable : '+str(np.unique(time_unv) ))
+else:
+    print('----- DAY(S) OF COMPARISON -----')
+    print('No data to plot')
+    print('Name of some of the segments which the data were unavailable : '+str(np.unique(time_unv) ))
