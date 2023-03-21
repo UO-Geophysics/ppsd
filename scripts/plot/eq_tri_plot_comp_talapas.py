@@ -14,10 +14,22 @@ using the calculator (also in the functions)
 
 """
 
+import logging
+# To replace the print 
+logging.basicConfig(
+        format='[%(levelname)s] %(asctime)s %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p',
+        level=logging.INFO,
+        handlers=[
+            logging.FileHandler("out.log"),
+            logging.StreamHandler()
+        ]
+)
+
 import json
 import fcts
 import pickle
-import logging
+import os.path
 import argparse
 import datetime
 import unet_tools
@@ -72,17 +84,6 @@ def get_args():
 
 def main():
     
-    # To replace the print ### doesn't work
-    logging.basicConfig(
-            format='[%(levelname)s] %(asctime)s %(message)s',
-            datefmt='%m/%d/%Y %I:%M:%S %p',
-            level=logging.INFO,
-            handlers=[
-                logging.FileHandler("out.log"),
-                logging.StreamHandler()
-            ]
-    )
-    
     args = get_args()
     
     with open('./param.json', 'r') as f:
@@ -106,7 +107,7 @@ def main():
     timeday = np.arange(day,day+args.num,dtype=int)
     
     # Period of time for computations per segm
-    timehr=np.arange(args.h1,args.h2,1,dtype=int)
+    timehr = np.arange(args.h1,args.h2,1,dtype=int)
     
     # Parameters 
     segm = 3600 #1h cut
@@ -204,12 +205,24 @@ def main():
             mth = ('0' + str(mth))
         if len(str(tod)) == 1:
             tod = ('0' + str(tod))
-            
+        
+        # Name the file 
+        path = "/projects/amt/shared/cascadia_"
         if net=='PB' or net=='UW':
-            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+net+'/data/'+net+'/'+str(args.yr)+'/'+day+'/'+args.sta+'.'+net+'.'+str(args.yr)+'.'+day, 'p_and_s')
+            filename = (path+net+'/data/'+net+'/'+str(args.yr)+'/'+
+                        day+'/'+args.sta+'.'+net+'.'+str(args.yr)+'.'+day)
         elif net=='CN':
-            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/projects/amt/shared/cascadia_'+net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+net+'.'+args.sta+'..'+args.cha, 'p_and_s')
-
+            filename = (path+net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+
+                    net+'.'+args.sta+'..'+args.cha+ '.mseed')
+        check_file = os.path.isfile(filename)
+        
+        # AI part
+        if check_file is True:
+            D_Z, D_E, D_N=run_cnn_alldata.rover_data_process(filename, 'p_and_s')
+        else:
+            name=net+'.'+sta+'..'+cha+'.'+day
+            time_unv.append(name)
+            continue
         times=D_Z.times()
         t_start = D_Z.stats.starttime
         D_Z=D_Z.data
@@ -279,15 +292,6 @@ def main():
         hrout=np.unique(timehr[h])
         timehr=np.delete(timehr,h)
         logging.info(timehr) #Hours processed
-        
-        # Read the file #####################
-        path = "/projects/amt/shared/cascadia_"
-        if net=='PB' or net=='UW':
-            filename = (path+net+'/data/'+net+'/'+str(args.yr)+'/'+
-                        day+'/'+args.sta+'.'+net+'.'+str(args.yr)+'.'+day)
-        elif net=='CN':
-            filename = (path+net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+
-                    net+'.'+args.sta+'..'+args.cha+ '.mseed')
         
         try: #if stream is empty or the wanted hours are missing
             # 1 day 
