@@ -37,10 +37,10 @@ client = Client("IRIS")
 """
 
 # Start of the data and how long
-date = date_n(2013,3,14)
+date = date_n(2017,1,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 8 #8 = 1 semaine
+num  = 1 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Period of time for computations per segm
@@ -48,9 +48,9 @@ h1 = 20; h2 = 24
 timehr=np.arange(h1,h2,1,dtype=int)
 
 # Nom du fichier
-sta = 'B927'
-net = 'PB'
-cha = 'EHZ' 
+sta = 'DOSE'
+net = 'UW'
+cha = 'BHZ' 
 yr  = str(date.timetuple().tm_year)
 
 # Parameters 
