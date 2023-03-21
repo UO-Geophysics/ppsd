@@ -220,7 +220,7 @@ def main():
         if check_file is True:
             D_Z, D_E, D_N=run_cnn_alldata.rover_data_process(filename, 'p_and_s')
         else:
-            name=net+'.'+sta+'..'+cha+'.'+day
+            name=str(net)+'.'+str(args.sta)+'..'+str(args.cha)+'.'+str(args.day)
             time_unv.append(name)
             continue
         times=D_Z.times()
@@ -391,7 +391,6 @@ def main():
             # Read the all stream by the defined segments
             t1 = trace.stats.starttime
             t2 = trace.stats.endtime
-            logging.info(metadata)
             while t1 + ppsd_length - trace.stats.delta <= t2:
                 slice = trace.slice(t1, t1 + ppsd_length -
                                     trace.stats.delta)
