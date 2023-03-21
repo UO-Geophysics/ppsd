@@ -6,7 +6,7 @@ Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Tue Mar  9
+Last time checked on Tue Mar 10
 
 Updates to do : need to verify that logging and argparse is working and use of
 the code on a terminal to see how it goes + modification of the paths when 
@@ -70,18 +70,9 @@ def get_args():
     
 """
 
-#####################
-def get_args_json():
-    with open('./param.json', 'r') as f:
-        data = json.load(f)
-    net   = data['?']['network']
-    thr   = data['?']['threshold']
-    bins1 = data['?']['bins1']
-    bins2 = data['?']['bins2']
-
 def main():
     
-    # To replace the print ### to adjust #####################
+    # To replace the print ### doesn't work
     logging.basicConfig(
             format='[%(levelname)s] %(asctime)s %(message)s',
             datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -93,6 +84,13 @@ def main():
     )
     
     args = get_args()
+    
+    with open('./param.json', 'r') as f:
+        data = json.load(f)
+    net   = data[args.sta]['network']
+    thr   = data[args.sta]['threshold']
+    bins1 = data[args.sta]['bins1']
+    bins2 = data[args.sta]['bins2']
     
     logging.info('----- DATA INFOS -----')
     logging.info('Year : '+str(args.yr)+' for '+net+'.'+args.sta+'..'+args.cha)
@@ -116,6 +114,7 @@ def main():
     overlap                        = 0
     period_smoothing_width_octaves = 1.0
     period_step_octaves            = 0.0125
+    # db_bins                        = (-170, -110, 0.5)
     db_bins                        = (bins1, bins2, 0.5)
     
     # Calculation on f1-f2Hz
@@ -300,12 +299,9 @@ def main():
                 cpttr+=1
             trace=stream[cpttr]
         except:
-            logging.error('Probleme de premiere lecture du file')
-            logging.error('A verifier si pb de channel ou autre')
-            name=net+'.'+args.sta+'..'+args.cha+'.'+day
+            name=str(net)+'.'+str(args.sta)+'..'+str(args.cha)+'.'+str(args.day)
             time_unv.append(name)
-            logging.error('Break sur '+name)
-            break
+            continue
         
         stats         = trace.stats
         network       = trace.stats.network
@@ -321,7 +317,6 @@ def main():
             copy=trace.copy()
             copy.trim(starttime=starttimeout,endtime=endtimeout)
             trace_out.append(copy)
-            # logging.info(trace_out)
         
         for ihour in timehr:
     
@@ -339,12 +334,12 @@ def main():
                     cpttr+=1
                 trace = stream[cpttr]
             except:
-                name=net+'.'+args.sta+'..'+args.cha+'.'+args.day
+                name=str(net)+'.'+str(args.sta)+'..'+str(args.cha)+'.'+str(args.day)
                 time_unv.append(name)
-                break
+                continue
             
             if len(trace)==0 or len(trace)<3600*sampling_rate:
-                break
+                continue
             
             # First calculated time (need for title)
             if beg==None:
@@ -468,17 +463,17 @@ def main():
     # For title
     endlast=end
     
-    if plot1 is None:
-        logging.info('----- PERIOD OF DATA -----')
-        logging.info('No data to plot')
-        logging.info('Name of some of the segments which the data were unavailable : '+str(time_unv))
-    else:
+    if 'plot1' in locals():
         logging.info('----- PERIOD OF DATA -----')
         logging.info('Number of segments with earthquakes taking out : '+str(len(trace_out)))
         logging.info('Number of segments plotted : '+str((args.num*(args.h2-args.h1)-len(trace_out)))+' out of '+str(args.num*(args.h2-args.h1)))
         if time_unv!=[]:
             logging.info('Name of the segments which the data were unavailable : '+str(time_unv))
-        
+    else:
+        logging.info('----- PERIOD OF DATA -----')
+        logging.info('No data to plot')
+        logging.info('Name of some of the segments which the data were unavailable : '+str(time_unv))
+    
         # Changing column of 0 in nan for percentiles
         df=pd.DataFrame(newcurves)
         df.replace(0,np.nan,inplace=True)
@@ -550,6 +545,7 @@ def main():
     cptday=0
     cpttrout=0
     cpttrout2=0
+    time_unv=[] #Lack of data
     
     for iday in timeday:
         
@@ -590,12 +586,9 @@ def main():
                 cpttr+=1
             trace=stream[cpttr]
         except:
-            logging.error('Probleme de premiere lecture du file')
-            logging.error('A verifier si pb de channel ou autre')
-            name=net+'.'+args.sta+'..'+args.cha+'.'+day
+            name=str(net)+'.'+str(args.sta)+'..'+str(args.cha)+'.'+str(args.day)
             time_unv.append(name)
-            logging.error('Break sur '+name)
-            break
+            continue
         
         stats         = trace.stats
         network       = trace.stats.network
@@ -620,12 +613,12 @@ def main():
                     cpttr+=1
                 trace = stream[cpttr]
             except:
-                name=net+'.'+args.sta+'..'+args.cha+'.'+args.day
+                name=str(net)+'.'+str(args.sta)+'..'+str(args.cha)+'.'+str(args.day)
                 time_unv.append(name)
-                break
+                continue
             
             if len(trace)==0 or len(trace)<3600*sampling_rate:
-                break
+                continue
             
             logging.info(trace.stats.channel+' | '+str(trace.stats.starttime)+' | '+str(trace.stats.endtime))
         
@@ -742,20 +735,19 @@ def main():
                           th1,th2,tth1,tth2,yrt,mtht,dayt)
         ax2.set_title(title)
         fig2.savefig(f'{net}.{args.sta}..{args.cha}_fig_.{yrt}{mtht}{dayt}.jpg', dpi=300, bbox_inches='tight')
-        # print(f'{net}.{args.sta}..{args.cha}_fig_.{yrt}{mtht}{dayt}.jpg)')
         cptday+=1
     
-    if plot2 is None:
-        logging.info('----- DAY(S) OF COMPARISON -----')
-        logging.info('No data to plot')
-        logging.info('Name of some of the segments which the data were unavailable : '+str(time_unv))
-    else:
+    if 'plot2' in locals():
         logging.info('----- DAY(S) OF COMPARISON -----')
         logging.info('Number of segments with earthquakes taking out : '+str(cpttrout))
         logging.info('Number of segments plotted : '+str((args.num*(args.h2-args.h1)-len(trace_out)))+' out of '+str(args.num*(args.h2-args.h1)))
         if time_unv!=[]:
             logging.info('Name of the segments which the data were unavailable : '+str(time_unv))
-    
+    else:
+        logging.info('----- DAY(S) OF COMPARISON -----')
+        logging.info('No data to plot')
+        logging.info('Name of some of the segments which the data were unavailable : '+str(time_unv))
+        
     return 0
 
 if __name__ == '__main__':
