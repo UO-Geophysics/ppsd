@@ -6,7 +6,7 @@ Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Tue Mar 10
+Last time checked on Tue Mar 21
 
 Updates to do : need to verify that logging and argparse is working and use of
 the code on a terminal to see how it goes + modification of the paths when 
@@ -474,19 +474,19 @@ def main():
         logging.info('No data to plot')
         logging.info('Name of some of the segments which the data were unavailable : '+str(time_unv))
     
-        # Changing column of 0 in nan for percentiles
-        df=pd.DataFrame(newcurves)
-        df.replace(0,np.nan,inplace=True)
-        newcurves=df.to_numpy()
-        
-        # 5th & 95th percentiles
-        curve5 =np.zeros(sz)
-        curve95=np.zeros(sz)
-        for ip in np.linspace(0,sz-1,sz):
-            curve5[int(ip)] =np.nanpercentile(newcurves[int(ip)], 5)
-            curve95[int(ip)]=np.nanpercentile(newcurves[int(ip)],95)
-        
-        plt.plot(x,curve5,'b',x,curve95,'b')
+    # Changing column of 0 in nan for percentiles
+    df=pd.DataFrame(newcurves)
+    df.replace(0,np.nan,inplace=True)
+    newcurves=df.to_numpy()
+    
+    # 5th & 95th percentiles
+    curve5 =np.zeros(sz)
+    curve95=np.zeros(sz)
+    for ip in np.linspace(0,sz-1,sz):
+        curve5[int(ip)] =np.nanpercentile(newcurves[int(ip)], 5)
+        curve95[int(ip)]=np.nanpercentile(newcurves[int(ip)],95)
+    
+    plt.plot(x,curve5,'b',x,curve95,'b')
         
     # Grid
     color = {"color": "0.7"}
