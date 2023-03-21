@@ -12,6 +12,7 @@ Last time checked on Tue Mar 21
 
 import fcts
 import pickle
+import os.path
 import datetime
 import unet_tools
 import numpy as np
@@ -36,10 +37,10 @@ client = Client("IRIS")
 """
 
 # Start of the data and how long
-date = date_n(2014,6,1)
+date = date_n(2013,3,14)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 2 #8 = 1 semaine
+num  = 8 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Period of time for computations per segm
@@ -47,9 +48,9 @@ h1 = 20; h2 = 24
 timehr=np.arange(h1,h2,1,dtype=int)
 
 # Nom du fichier
-sta = 'DOSE'
-net = 'UW'
-cha = 'BHZ' 
+sta = 'B927'
+net = 'PB'
+cha = 'EHZ' 
 yr  = str(date.timetuple().tm_year)
 
 # Parameters 
@@ -147,9 +148,24 @@ for iday in timeday:
         mth = ('0' + str(mth))
     if len(str(tod)) == 1:
         tod = ('0' + str(tod))
+        
+    # Name of the file and verification
+    path = "/Users/loispapin/Documents/Work/PNSN/"
+    if net=='PB' or net=='UW':
+        filename = (path + yr + '/Data/' + sta + '/' + sta 
+                    + '.' + net + '.' + yr + '.' + day)
+    elif net=='CN':
+        filename = (path + yr + '/Data/' + sta + '/' + yr + mth + 
+                    tod + '.' + net + '.' + sta + '..' + cha + '.mseed')
+    check_file = os.path.isfile(filename)
     
-    D_Z, D_E, D_N=run_cnn_alldata.rover_data_process('/Users/loispapin/Documents/Work/PNSN/2014/Data/'
-                                                     +sta+'/'+sta+'.'+net+'.2014.'+day, 'p_and_s')
+    # AI part
+    if check_file is True:
+        D_Z, D_E, D_N=run_cnn_alldata.rover_data_process(filename, 'p_and_s')
+    else:
+        name=net+'.'+sta+'..'+cha+'.'+day
+        time_unv.append(name)
+        continue
     times=D_Z.times()
     t_start = D_Z.stats.starttime
     D_Z=D_Z.data
@@ -219,15 +235,6 @@ for iday in timeday:
     hrout=np.unique(timehr[h])
     timehr=np.delete(timehr,h)
     print(timehr) #Hours processed
-    
-    # Read the file
-    path = "/Users/loispapin/Documents/Work/PNSN/"
-    if net=='PB' or net=='UW':
-        filename = (path + yr + '/Data/' + sta + '/' + sta 
-                    + '.' + net + '.' + yr + '.' + day)
-    elif net=='CN':
-        filename = (path + yr + '/Data/' + sta + '/' + yr + mth + 
-                    tod + '.' + net + '.' + sta + '..' + cha + '.mseed')
     
     try: #if stream is empty or the wanted hours are missing
         # 1 day 
@@ -375,7 +382,7 @@ for iday in timeday:
         xedges=1.0/period_xedges
         x=np.linspace(min(xedges),max(xedges),sz)
         plot1=plt.plot(x,curves,c='lightgrey')
-        
+
         # Curves stock for percentiles
         if iday==day1:
             cpthr=0
