@@ -6,11 +6,9 @@ Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Tue Mar 21
+Last time checked on Fri Mar 31
 
-Updates to do : need to verify that logging and argparse is working and use of
-the code on a terminal to see how it goes + modification of the paths when 
-using the calculator (also in the functions)
+Updates to do : see Consignes.txt
 
 """
 
@@ -21,7 +19,7 @@ logging.basicConfig(
         datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logging.INFO,
         handlers=[
-            logging.FileHandler("out.log"),
+            logging.FileHandler("out.log"), #if multiple run = all in the same out.log --> check the .err
             logging.StreamHandler()
         ]
 )
@@ -67,8 +65,8 @@ def get_args():
     parse.add_argument('cha'     , type=str, help="Channel of processing")
     parse.add_argument('h1'      , type=int, help="Start time hour of processing (hour)")
     parse.add_argument('h2'      , type=int, help="End time of processing (hour)")
-    parse.add_argument('f1'      , type=int, help="First frequency for the range")
-    parse.add_argument('f2'      , type=int, help="Last frequency for the range")
+    parse.add_argument('f1'      , type=float, help="First frequency for the range")
+    parse.add_argument('f2'      , type=float, help="Last frequency for the range")
     # parse.add_argument('thrhold' , type=float, help="Threshold for P and S waves picks")
     parse.add_argument('yr2'     , type=int, help="Year of comparison")
     parse.add_argument('mth2'    , type=int, help="Month of comparison")
@@ -403,6 +401,7 @@ def main():
             # Calculation of the histogram used for the plots
             selected = fcts.stack_selection(current_times_all_details, times_processed,
                                        starttime=starttimenew, endtime=endtimenew)
+            # selected=np.array([True])
             used_indices = selected.nonzero()[0]
             used_count   = len(used_indices)
             used_times   = np.array(times_processed)[used_indices]
@@ -522,7 +521,7 @@ def main():
     
     # Show the figure
     plt.ion()
-    plt.savefig(f'{net}.{args.sta}..{args.cha}_fig.jpg', dpi=300, bbox_inches='tight')
+    plt.savefig(f'{net}.{args.sta}..{args.cha}_fig_.{args.yr}.jpg', dpi=300, bbox_inches='tight')
     plt.savefig('fig.jpg', dpi=300, bbox_inches='tight')
     
     picklename=(args.sta+'_'+str(args.yr)+'_'+args.cha)
@@ -677,6 +676,7 @@ def main():
             # Calculation of the histogram used for the plots
             selected = fcts.stack_selection(current_times_all_details, times_processed,
                                        starttime=starttimenew, endtime=endtimenew)
+            # selected=np.array([True])
             used_indices = selected.nonzero()[0]
             used_count   = len(used_indices)
             used_times   = np.array(times_processed)[used_indices]
