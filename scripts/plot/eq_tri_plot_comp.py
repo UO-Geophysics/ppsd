@@ -6,7 +6,7 @@ Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Tue Mar 21
+Last time checked on Fri Mar 31
 
 """
 
@@ -40,7 +40,7 @@ client = Client("IRIS")
 date = date_n(2017,1,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 1 #8 = 1 semaine
+num  = 8 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Period of time for computations per segm
@@ -346,6 +346,7 @@ for iday in timeday:
         # Calculation of the histogram used for the plots
         selected = fcts.stack_selection(current_times_all_details, times_processed,
                                    starttime=starttimenew, endtime=endtimenew)
+        # selected=np.array([True])
         used_indices = selected.nonzero()[0]
         used_count   = len(used_indices)
         used_times   = np.array(times_processed)[used_indices]
@@ -465,7 +466,7 @@ ax.set_title(title)
 
 # Show the figure
 plt.ion()
-plt.savefig(f'{net}.{sta}.{cha}_fig.jpg', dpi=300, bbox_inches='tight')
+plt.savefig(f'{net}.{sta}.{cha}_fig_.{yr}.jpg', dpi=300, bbox_inches='tight')
 plt.savefig('fig.jpg', dpi=300, bbox_inches='tight')
 
 pickle.dump(fig, open('myplot.pickle', 'wb'))
@@ -621,6 +622,7 @@ for iday in timeday:
         # Calculation of the histogram used for the plots
         selected = fcts.stack_selection(current_times_all_details, times_processed,
                                    starttime=starttimenew, endtime=endtimenew)
+        # selected=np.array([True])
         used_indices = selected.nonzero()[0]
         used_count   = len(used_indices)
         used_times   = np.array(times_processed)[used_indices]
