@@ -1,0 +1,25 @@
+{"B926":{
+    "network": "PB",
+    "threshold": 0.5,
+    "bins1": -170,
+    "bins2": -110
+  },
+  "B927":{
+    "network": "PB",
+    "threshold": 0.6,
+    "bins1": -160,
+    "bins2": -100
+  },
+  "B009":{
+    "network": "PB",
+    "threshold": 0.5,
+    "bins1": -170,
+    "bins2": -110
+  },
+  "DOSE":{
+    "network": "UW",
+    "threshold": 0.6,
+    "bins1": -160,
+    "bins2": -90
+  }
+}
