@@ -40,7 +40,7 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 """
 
 # Start of the data and how long
-date = date_n(2015,1,1)
+date = date_n(2012,9,30)
 day  = date.timetuple().tm_yday 
 day1 = day
 num  = 3 #8 = 1 semaine
@@ -51,9 +51,9 @@ h1 = 20; h2 = 24
 timehr=np.arange(h1,h2,1,dtype=int)
 
 # Nom du fichier
-sta = 'B926'
-net = 'PB'
-cha = 'EHZ'
+sta = 'DOSE'
+net = 'UW'
+cha = 'BHZ'
 yr  = str(date.timetuple().tm_year)
 
 # Parameters 

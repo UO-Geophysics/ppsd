@@ -31,19 +31,36 @@ runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
 # runfile('C:/Users/papin/Documents/Spec/fcts.py', 
 #         wdir='C:/Users/papin/Documents/Spec')
 
+def centered_data(stream,ncomp,nsamp):
+    """
+    Centers seismic data around zero by removing the mean
+    Args:
+    - stream: seismic data stream
+    - ncomp: number of components (traces) in the stream
+    - nsamp: number of samples in each traces
+    Returns:
+    - centered_data
+    """
+    centered_data = np.zeros((ncomp,nsamp))
+    for i,tr in enumerate(stream):
+        tr.detrend()
+        centered_data[i] = tr.data - np.nanmean(tr.data)
+    return centered_data
+
+
 ######################################################################
 #                               DATA                                 #
 ######################################################################
 
 # Start of the data and how long
-date = date_n(2013,8,27)
+date = date_n(2014,11,29)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 45 #8 = 1 semaine
+num  = 1 #8 = 1 semaine
 
 # Nom du fichier
-sta = 'B927'
-net = 'PB'
+sta = 'DOSE'
+net = 'UW'
 cha = 'EHZ'
 yr  = str(date.timetuple().tm_year)
 
@@ -78,7 +95,7 @@ for iday in np.arange(day,day+num,dtype=int):
     
     stream = read(filename)
     stream.merge(merge_method(skip_on_gaps),fill_value=0)
-    trace  = stream[0] #Composante Z
+    trace  = stream[2] 
     stats         = trace.stats
     network       = trace.stats.network
     station       = trace.stats.station
@@ -88,8 +105,9 @@ for iday in np.arange(day,day+num,dtype=int):
     starttime     = UTCDateTime(datetime.datetime(int(yr),int(mth),int(tod)))
     endtime       = starttime+((24*3600)-(1/sampling_rate))
     
-    starttime = starttime+(3600*9.5)#+(27.05/60)))
+    starttime = starttime+(3600*20)#+(300*6)#+(27.05/60)))
     endtime   = starttime+(3600*4)
     trace=trace.trim(starttime=starttime,endtime=endtime)
     print(trace)
-    trace.plot()
+    fig=trace.plot()
+    # ax.set_ylim(1000,-1000)

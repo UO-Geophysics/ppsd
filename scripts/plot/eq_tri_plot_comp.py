@@ -6,7 +6,7 @@ Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Fri Mar 31
+Last time checked on Tue Apr  4
 
 """
 
@@ -27,7 +27,7 @@ from scipy.signal import find_peaks
 from obspy.clients.fdsn import Client
 from obspy.signal.util import prev_pow_2
 from obspy import Stream, Trace, UTCDateTime
-
+import matplotlib.colors as mcolors
 client = Client("IRIS")
 
 """
@@ -37,10 +37,10 @@ client = Client("IRIS")
 """
 
 # Start of the data and how long
-date = date_n(2017,1,1)
+date = date_n(2014,1,1)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 8 #8 = 1 semaine
+num  = 365 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 
 # Period of time for computations per segm
@@ -50,7 +50,7 @@ timehr=np.arange(h1,h2,1,dtype=int)
 # Nom du fichier
 sta = 'DOSE'
 net = 'UW'
-cha = 'BHZ' 
+cha = 'BHE' 
 yr  = str(date.timetuple().tm_year)
 
 # Parameters 
@@ -59,7 +59,7 @@ ppsd_length                    = segm
 overlap                        = 0
 period_smoothing_width_octaves = 1.0
 period_step_octaves            = 0.0125
-db_bins                        = (-170, -110, 0.5)
+db_bins                        = (-160, -90, 0.5)
 
 # Calculation on 1-10Hz
 f1 = 1; f2 = 10; 
@@ -99,7 +99,7 @@ wid_sec = 15
 sr = 100
 # epsilon value shouldn't change
 epsilon = 1e-6
-thrhold=0.5
+thrhold=1.0
 
 # SET MODEL FILE NAME    
 model_save_file="unet_3comp_logfeat_b_eps_"+str(epos)+"_sr_"+str(sr)+"_std_"+str(std)+".tf"                  
@@ -382,7 +382,7 @@ for iday in timeday:
         curves=np.flip(curve)
         xedges=1.0/period_xedges
         x=np.linspace(min(xedges),max(xedges),sz)
-        plot1=plt.plot(x,curves,c='lightgrey')
+        plot1=plt.plot(x,curves,c='lightgrey',label='Hours from the year data')
 
         # Curves stock for percentiles
         if iday==day1:
@@ -433,8 +433,10 @@ for ip in np.linspace(0,sz-1,sz):
     curve5[int(ip)] =np.nanpercentile(newcurves[int(ip)], 5)
     curve95[int(ip)]=np.nanpercentile(newcurves[int(ip)],95)
 
-plt.plot(x,curve5,'b',x,curve95,'b')
-    
+# plt.plot(x,curve5 ,'b')#,label='Percentiles')
+plt.plot(x,curve95,'k',label='Percentiles')
+plt.plot(x,curve5,'k',x,curve95,'k')
+
 # Grid
 color = {"color": "0.7"}
 ax.grid(True, which="major", **color)
@@ -447,41 +449,43 @@ ax.set_xlim(period_lim)
 ax.set_ylabel('Amplitude [$m^2/s^4/Hz$] [dB]')
 ax.set_ylim(db_bin_edges[0],db_bin_edges[-1])
 
-th1=beg.datetime.hour
-th2=end.datetime.hour
-tth1='am';tth2='am'
-if th2==0:
-    th2=12
-    tth2='pm'
-if th1>12:
-    th1=th1-12
-    tth1='pm'
-if th2>12:
-    th2=th2-12
-    tth2='pm'
-title = "%s   %s--%s   (from %s to %s %s-%s) "
-title = title % (iid,beg.date,(end-1).date,
-                  th1,th2,tth1,tth2)
-ax.set_title(title)
+# th1=beg.datetime.hour
+# th2=end.datetime.hour
+# tth1='am';tth2='am'
+# if th2==0:
+#     th2=12
+#     tth2='pm'
+# if th1>12:
+#     th1=th1-12
+#     tth1='pm'
+# if th2>12:
+#     th2=th2-12
+#     tth2='pm'
+# title = "%s   %s--%s   (from %s to %s %s-%s) "
+# title = title % (iid,beg.date,(end-1).date,
+#                   th1,th2,tth1,tth2)
+title = "%s   %s--%s   (from 8pm to 12pm) "
+title = title % (iid,beg.date,(end-1).date)
+# ax.set_title(title)
 
 # Show the figure
 plt.ion()
-plt.savefig(f'{net}.{sta}.{cha}_fig_.{yr}.jpg', dpi=300, bbox_inches='tight')
+plt.savefig(f'{net}.{sta}.{cha}_fig_.{yr}.jpg', dpi=600, bbox_inches='tight')
 plt.savefig('fig.jpg', dpi=300, bbox_inches='tight')
 
-pickle.dump(fig, open('myplot.pickle', 'wb'))
+pickle.dump(fig, open('myplot.pickle2', 'wb'))
 
 """
     Here it's about what day.s we want to compare to the set of data previously
     plotted (greys plots : data ; blue plots : percentiles).
     
 """
-
+########################################################
 # Start of the data and how long
-date = date_n(2015,12,16)
+date = date_n(2014,11,29)
 day  = date.timetuple().tm_yday 
 day1 = day
-num  = 16 #8 = 1 semaine
+num  = 1 #8 = 1 semaine
 timeday = np.arange(day,day+num,dtype=int)
 timehr=np.arange(h1,h2,1,dtype=int)
 
@@ -489,16 +493,32 @@ timehr=np.arange(h1,h2,1,dtype=int)
 cptday=0
 cpttrout=0
 cpttrout2=0
+cptcolor=0
 time_unv=[] #Lack of data
 
 # # Period of time for computations per segm
 # h1 = 20; h2 = 24
 # timehr=np.arange(h1,h2,1,dtype=int)
 
+cmap=plt.get_cmap("autumn_r")
+# cmap=plt.get_cmap("BuPu")
+# cmap=plt.get_cmap("YlOrRd")
+# cmap=plt.get_cmap("Wistia")
+
+# sample the colormaps that you want to use. Use 128 from each so we get 256
+# colors in total
+colors1 = plt.cm.Blues_r(np.linspace(0, 0.5, 50))
+colors2 = plt.cm.Purples(np.linspace(0.5, 1, 50))
+
+# combine them and build a new colormap
+colors = np.vstack((colors1, colors2))
+mymap = mcolors.LinearSegmentedColormap.from_list('my_colormap', colors)
+cmap=mymap
+
 for iday in timeday:
     
     # Load the previous figure 
-    fig2 = pickle.load(open('myplot.pickle','rb'))
+    fig2 = pickle.load(open('myplot.pickle2','rb'))
     ax2  = fig2.axes[0]
     
     if len(str(iday)) == 1:
@@ -668,7 +688,9 @@ for iday in timeday:
             curves=np.flip(curve)
             xedges=1.0/period_xedges
             x=np.linspace(min(xedges),max(xedges),sz)
-            plot2=ax2.plot(x,curves,'--r')
+            # plot2=ax2.plot(x,curves,'--r')#,label='Day data')
+            plot2=ax2.plot(x,curves,'--',color=cmap(cptcolor/3),label='Hours of the comparison day') #Different plots = different colors ###need to have a colormap
+            cptcolor+=1
     
     # Date for title and name of the fig
     dayt = str(end.day)
@@ -678,11 +700,12 @@ for iday in timeday:
         dayt='0'+str(end.day)
     elif len(str(end.month))<2:
         mtht='0'+str(end.month)
-    title = "%s   %s--%s   (from %s to %s %s-%s) \n day to compare : %s-%s-%s"
-    title = title % (iid,beg.date,(endlast-1).date,
-                      th1,th2,tth1,tth2,yrt,mtht,dayt)
+    title = "%s   2014-01-01--2014-12-31   (from 8pm to 12pm) \n day to compare : %s-%s-%s"
+    title = title % (iid,
+                     yrt,mtht,dayt)
     ax2.set_title(title)
-    fig2.savefig(f'{net}.{sta}..{cha}_fig_.{yrt}{mtht}{dayt}.jpg', dpi=300, bbox_inches='tight')
+    # ax2.legend(loc=9,bbox_to_anchor=(0.5, 1.5,),ncols=4)
+    fig2.savefig(f'{net}.{sta}..{cha}_fig_.{yrt}{mtht}{dayt}.jpg', dpi=600, bbox_inches='tight')
     
     cptday+=1
 

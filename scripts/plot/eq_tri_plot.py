@@ -19,7 +19,6 @@ Last time checked on Tue Mar  8
 
 """
 
-import os
 import fcts
 import pickle
 import datetime

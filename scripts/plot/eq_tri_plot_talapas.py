@@ -22,7 +22,6 @@ using the calculator (also in the functions)
 
 """
 
-import os
 import fcts
 import pickle
 import logging
