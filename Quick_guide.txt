@@ -1,12 +1,12 @@
-#-------------------------------------------------------------------#
-#----------------------------QUICK GUIDE----------------------------#
-#-------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------#
+#-----------------------------------------QUICK GUIDE-----------------------------------------#
+#---------------------------------------------------------------------------------------------#
 
 - ftcs.py : contains all the fonctions used in the scripts
 
 - plot_signal.py : uses some fonctions of the obspy package to plot the raw seismic data
 
-#-------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------#
 
 - spec_estimation_*.py : use of obspy to plot the PPSD as presented in the package. _comp is made for the comparison of 2 sets of data, _yr is for several days of data up to a year
 
@@ -14,13 +14,13 @@
 
 In the "old" folder because these scripts compute on raw data without any sorting of spurious signals (could be earthquakes).
 
-#-------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------#
 
 - eq_tri_plot_*py : PPSD with curves (same as spec_estimation_*py) but any spurious signals and so possible earthquakes are sorted out using a CNN. can be launch on a local computer, or for UO people on the cluster with talapas version (more recent ones)
 
 These scripts are intended to study 4 hours of data, need to make the change if more are needed.
 
-#-------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------#
 
 - param.json : gives the parameters of the stations we choose to study (talapas version with arguments)
 
