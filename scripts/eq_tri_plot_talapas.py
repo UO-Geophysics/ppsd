@@ -14,11 +14,7 @@ most likely an earthquake. Signals after that, are mostly (maybe only) composed
 of noise. Then PPSD computations are used on that new clean signal to study the 
 amplitude of a range of frequencies.
 
-Last time checked on Tue Mar  8
-
-Updates to do : need to verify that logging and argparse is working and use of
-the code on a terminal to see how it goes + modification of the paths when 
-using the calculator (also in the functions)
+Last time checked on Mon May 29
 
 """
 
@@ -75,7 +71,7 @@ def get_args():
 
 def main():
     
-    # To replace the print ### to adjust #####################
+    # To replace the print ### doesn't work = need to put it like the comp version
     logging.basicConfig(
             format='[%(levelname)s] %(asctime)s %(message)s',
             datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -271,7 +267,6 @@ def main():
         timehr=np.delete(timehr,h)
         logging.info(timehr) #Hours processed
         
-        
         # Read the file #####################
         path = "/Users/loispapin/Documents/Work/PNSN/"
         if args.net=='PB' or args.net=='UW':
@@ -464,7 +459,7 @@ def main():
     else:
         logging.info('----- PERIOD OF DATA -----')
         logging.info('Number of segments with earthquakes taking out : '+str(len(trace_out)))
-        logging.info('Number of segments plotted : '+str((num*(args.h2-args.h1)-len(trace_out)))+' out of '+str(args.num*(args.h2-args.h1)))
+        logging.info('Number of segments plotted : '+str((args.num*(args.h2-args.h1)-len(trace_out)))+' out of '+str(args.num*(args.h2-args.h1)))
         if time_unv!=[]:
             logging.info('Name of the segments which the data were unavailable : '+str(time_unv))
         

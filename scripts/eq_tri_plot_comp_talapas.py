@@ -2,13 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Feb 13 13:31:00 2023
-Update  on Thu Feb 16
 
 @author: loispapin
 
-Last time checked on Fri Mar 31
-
-Updates to do : see Consignes.txt
+Last time checked on Mon May 29
 
 """
 
@@ -84,6 +81,7 @@ def main():
     
     args = get_args()
     
+    # Get the parameters corresponding to the station
     with open('./param.json', 'r') as f:
         data = json.load(f)
     net   = data[args.sta]['network']
@@ -113,7 +111,6 @@ def main():
     overlap                        = 0
     period_smoothing_width_octaves = 1.0
     period_step_octaves            = 0.0125
-    # db_bins                        = (-170, -110, 0.5)
     db_bins                        = (bins1, bins2, 0.5)
     
     # Calculation on f1-f2Hz
@@ -212,15 +209,17 @@ def main():
         elif net=='CN':
             filename = (path+net+'/'+str(args.yr)+str(args.mth)+str(args.day)+'.'+
                     net+'.'+args.sta+'..'+args.cha+ '.mseed')
-        check_file = os.path.isfile(filename)
-        
-        # AI part
+            
+        # Does the file exist ?
+        check_file = os.path.isfile(filename) 
         if check_file is True:
             D_Z, D_E, D_N=run_cnn_alldata.rover_data_process(filename, 'p_and_s')
         else:
             name=str(net)+'.'+str(args.sta)+'..'+str(args.cha)+'.'+str(args.day)
             time_unv.append(name)
             continue
+        
+        # AI part
         times=D_Z.times()
         t_start = D_Z.stats.starttime
         D_Z=D_Z.data

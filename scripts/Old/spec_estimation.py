@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Nov  7 10:03:38 2022
-Working on Mon Nov 28 15:18:23 2022
 Update  on Thu Jan 12
 
 @author: loispapin
@@ -13,7 +12,7 @@ This script is based on the PPSD class defined in the Obspy module. Without
 changing the parameters, the output figure of this script is the same as 
 using the ppsd.plot of the module.
 
-No class is defined here, only necessary functions are in defs.py file.
+No class is defined here, only necessary functions are in fcts.py file.
 
 Code for 1 day of data or a section of it. Need to check 
 spec_estimation_yr.py for a year of data.
@@ -25,8 +24,7 @@ Sections :
     . Calculation of the 2D-histogram
     . Plot of the histogram
     
-PS : other parameters/lines of code are available in trash.py
-PSS : the original script of the PPSD class of the module can be found at
+PS : the original script of the PPSD class of the module can be found at
 /opt/anaconda3/lib/python3.9/site-packages/obspy/signal/spectral_estimation.py
 
 Last time checked on Thu Jan 12
@@ -47,11 +45,9 @@ from obspy.signal.util import prev_pow_2
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
-# Functions called in this script #Mac & Windows
+# Functions called in this script
 runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
         wdir='/Users/loispapin/Documents/Work/PNSN')
-# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
-#         wdir='C:/Users/papin/Documents/Spec')
 
 """
     Read the data with the function read of the Obspy module. Identify the 
@@ -76,11 +72,6 @@ elif len(day) == 2:
 path = "/Users/loispapin/Documents/Work/PNSN/"
 filename = (path + yr + '/Data/' + sta + '/' + sta 
             + '.' + net + '.' + yr + '.' + day)
-
-# # Windows
-# path = r"C:\Users\papin\Documents\Spec\Data"
-# filename = (path + "\\" + sta + "\\" + sta + '.' 
-#             + net + '.' + yr + '.' + day)
 
 # Parameters 
 segm = 3600 #1h cut

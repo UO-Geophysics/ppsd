@@ -19,9 +19,6 @@ Sections :
     . Calculation of the 2D-histogram
         Before : 2 times (2 sets of time/data)
     . Plot of the histograms
-    
-NB : For GMW (UW) it's only EHZ for 2011 but there are a lot of traces so 
-stream.merge() for all
 
 Last time checked on Thu Jan 12
 """
@@ -41,11 +38,9 @@ from obspy.signal.util import prev_pow_2
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
 
-# Functions called in this script #Mac & Windows
+# Functions called in this script
 runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
         wdir='/Users/loispapin/Documents/Work/PNSN')
-# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
-#         wdir='C:/Users/papin/Documents/Spec')
 
 """
     Start of the script with time to choose : the period of time that we want 
@@ -98,11 +93,6 @@ for iday in np.arange(day,day+num,dtype=int):
     path = "/Users/loispapin/Documents/Work/PNSN/"
     filename = (path + yr + '/Data/' + sta + '/' + sta 
                 + '.' + net + '.' + yr + '.' + day)
-    
-    # # Windows
-    # path = r"C:\Users\papin\Documents\Spec\Data"
-    # filename = (path + "\\" + sta + "\\" + sta + '.' 
-    #             + net + '.' + yr + '.' + day)
     
     # 1 day
     stream = read(filename)

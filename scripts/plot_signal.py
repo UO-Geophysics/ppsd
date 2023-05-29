@@ -4,32 +4,30 @@
 Created on Tue Jan 10 11:17:35 2023
 
 @author: loispapin
+
+Last time checked on Mon May 29
+
 """
 
-import datetime
+import fcts
 import warnings
 import numpy as np
-import matplotlib.pyplot as plt
 
+import datetime
 from datetime import date as date_n
+
+from matplotlib import cm
 from matplotlib import mlab
+import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
+from matplotlib.colors import ListedColormap,LinearSegmentedColormap
 
 from obspy import read
 from obspy import UTCDateTime
-from obspy.imaging.cm import obspy_sequential 
-from obspy.signal.util import prev_pow_2
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
-
-from matplotlib import cm
-from matplotlib.colors import ListedColormap,LinearSegmentedColormap
-
-# Functions called in this script #Mac & Windows
-runfile('/Users/loispapin/Documents/Work/PNSN/fcts.py',
-        wdir='/Users/loispapin/Documents/Work/PNSN')
-# runfile('C:/Users/papin/Documents/Spec/fcts.py', 
-#         wdir='C:/Users/papin/Documents/Spec')
+from obspy.signal.util import prev_pow_2
+from obspy.imaging.cm import obspy_sequential 
 
 def centered_data(stream,ncomp,nsamp):
     """
@@ -46,7 +44,6 @@ def centered_data(stream,ncomp,nsamp):
         tr.detrend()
         centered_data[i] = tr.data - np.nanmean(tr.data)
     return centered_data
-
 
 ######################################################################
 #                               DATA                                 #
@@ -94,8 +91,8 @@ for iday in np.arange(day,day+num,dtype=int):
                     tod + '.' + net + '.' + sta + '..' + cha + '.mseed')
     
     stream = read(filename)
-    stream.merge(merge_method(skip_on_gaps),fill_value=0)
-    trace  = stream[2] 
+    stream.merge(fcts.merge_method(skip_on_gaps),fill_value=0)
+    trace  = stream[2] #The number is the channel
     stats         = trace.stats
     network       = trace.stats.network
     station       = trace.stats.station

@@ -8,22 +8,23 @@ Created on Mon Nov  7 10:56:05 2022
 All the functions used in the scripts of spectral estimation (PPSD)
 are here. This is made to avoid a bigger script.
 
-Last time checked on Wed Dec 28
+Last time checked on Mon May 29
+
 """
 
-import bisect
 import math
+import bisect
 import warnings
 import numpy as np
-import matplotlib.pyplot as plt
 
 from matplotlib import mlab
+import matplotlib.pyplot as plt
 
+from obspy import UTCDateTime
 from obspy.clients.fdsn import Client
 client = Client("IRIS")
-from obspy import UTCDateTime
-from obspy.core.inventory import Inventory
 from obspy.core.util import AttribDict
+from obspy.core.inventory import Inventory
 from obspy.signal.invsim import cosine_taper
 
 def setup_period_binning(psd_periods,period_smoothing_width_octaves,
