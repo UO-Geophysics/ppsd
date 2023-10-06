@@ -38,6 +38,14 @@ The scripts accept several command-line arguments for configuring the data proce
 - `yr2`, `mth2`, `day2`: Year, month, and day for comparison.
 - `num2`: Number of days for comparison.
 
+### Example
+
+```bash
+python spec_estimation_plot_yr.py 2023 10 06 5 UW STA1 EHZ 0 4 0.1 10 2023 10 05 1
+```
+
+This command processes seismic data from station UW.STA1, channel EHZ, for 5 days starting from October 6, 2023, plots the PSD curves, and compares them with data from October 5, 2023.
+
 ## Initialization
 
 The initialization section of the script sets up parameters and loads data specific to the chosen network station. It also initializes the AI model for processing.
@@ -59,14 +67,6 @@ The script generates Power Spectral Density (PPSD) plots to visualize noise leve
 The final section compares the generated PPSD plots with data from another specified date to identify any significant changes in noise levels.
 
 Feel free to customize and adapt these scripts to your specific seismic data analysis needs.
-
-### Example
-
-```bash
-python spec_estimation_plot_yr.py 2023 10 06 5 UW STA1 EHZ 0 4 0.1 10 2023 10 05 1
-```
-
-This command processes seismic data from station UW.STA1, channel EHZ, for 5 days starting from October 6, 2023, plots the PSD curves, and compares them with data from October 5, 2023.
 
 ## Acknowledgments
 
